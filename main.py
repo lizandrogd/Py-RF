@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import pymongo
 
 def detect_face(frame, face_cascade):
     # Convierte la imagen a escala de grises
@@ -14,8 +15,13 @@ def main():
     # Carga el clasificador Haar para detección de rostros
     face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
+ # Establece la conexión a la base de datos MongoDB
+    client = pymongo.MongoClient("mongodb://lizandrogd:Nicolas2796*+@195.35.32.59:27017/")  # Cambia localhost y el puerto si es necesario
+    db = client["facialcheck"]  # Cambia "mydatabase" por el nombre de tu base de datos
+    collection = db["imagenes"]  # Cambia "userdata" por el nombre de tu colección
+
     # Captura una imagen de referencia
-    reference_image = cv2.imread("img2.jpeg")  # Reemplaza "tu_imagen_de_referencia.jpg" con la ruta de tu imagen de referencia
+    reference_image = cv2.imread("C:\laragon\www\facialcheck\storage\app\storage")  # Reemplaza "tu_imagen_de_referencia.jpg" con la ruta de tu imagen de referencia
     if reference_image is None:
         print("No se pudo cargar la imagen de referencia.")
         return
