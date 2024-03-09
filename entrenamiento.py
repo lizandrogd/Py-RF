@@ -1,86 +1,78 @@
 import cv2
 import numpy as np
-from pymongo import MongoClient
-from bson.binary import Binary
-from bson import ObjectId
+from sklearn.neighbors import KNeighborsClassifier
+import os
+import joblib 
 
-# Conexión a la base de datos MongoDB
-cliente = MongoClient('mongodb://localhost:27017')
-base_datos = cliente['prueba']
-coleccion_imagenes = base_datos['imagenes']
-coleccion_perfiles = base_datos['perfiles']
-
-# Ruta donde se guardará el modelo entrenado
-ruta_modelo_entrenado = "modelo_entrenado.xml"
-ruta_datos_entrenamiento = "datos_entrenamiento.txt"
-
-# Cargar el clasificador preentrenado de detección de rostros
-clasificador_rostros = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-
-# Cargar el modelo de reconocimiento facial LBPH
-modelo_reconocimiento = cv2.face.LBPHFaceRecognizer_create()
-def cargar_imagenes_desde_bd():
+def cargar_imagenes_y_etiquetas(ruta_dataset):
     imagenes = []
     etiquetas = []
-    etiqueta_perfil_map = {}  # Mapeo de etiquetas a perfiles
 
-    for imagen in coleccion_imagenes.find():
-        perfil_id = imagen.get('perfil_id')
-        perfil = coleccion_perfiles.find_one({"_id": ObjectId(perfil_id)})
-        if perfil:
-            # Asignar una etiqueta única a cada perfil
-            if perfil_id not in etiqueta_perfil_map:
-                etiqueta_perfil_map[perfil_id] = len(etiqueta_perfil_map)
-            etiqueta = etiqueta_perfil_map[perfil_id]
+    for nombre_persona in os.listdir(ruta_dataset):
+        carpeta_persona = os.path.join(ruta_dataset, nombre_persona)
 
-            # Decodificar la imagen binaria y convertirla a formato numpy array
-            img_encoded = imagen['imagen']
-            nparr = np.frombuffer(img_encoded, np.uint8)
-            img_decoded = cv2.imdecode(nparr, cv2.IMREAD_GRAYSCALE)
+        for imagen_nombre in os.listdir(carpeta_persona):
+            imagen_ruta = os.path.join(carpeta_persona, imagen_nombre)
+            imagen = cv2.imread(imagen_ruta, cv2.IMREAD_GRAYSCALE)
+            # Redimensionar la imagen a un tamaño fijo (por ejemplo, 100x100 píxeles)
+            imagen = cv2.resize(imagen, (100, 100))
+            imagenes.append(imagen)
+            etiquetas.append(nombre_persona)
 
-            # Detectar rostros en la imagen
-            rostros = clasificador_rostros.detectMultiScale(img_decoded, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+            # Aplicar aumento de datos a la imagen
+            imagen_flip = cv2.flip(imagen, 1)  # Volteo horizontal
+            imagenes.append(imagen_flip)
+            etiquetas.append(nombre_persona)
 
-            if len(rostros) > 0:
-                for (x, y, w, h) in rostros:
-                    # Recortar el área del rostro
-                    rostro = img_decoded[y:y+h, x:x+w]
-                    imagenes.append(rostro)
-                    etiquetas.append(etiqueta)
+            # Rotación aleatoria
+            rows, cols = imagen.shape
+            for angulo in range(-20, 21, 5):  # Rotación en intervalos de 5 grados
+                M = cv2.getRotationMatrix2D((cols / 2, rows / 2), angulo, 1)
+                imagen_rotada = cv2.warpAffine(imagen, M, (cols, rows))
+                imagenes.append(imagen_rotada)
+                etiquetas.append(nombre_persona)
+
+            # Desenfoque gaussiano
+            imagen_desenfocada = cv2.GaussianBlur(imagen, (5, 5), 0)
+            imagenes.append(imagen_desenfocada)
+            etiquetas.append(nombre_persona)
+
+            # Ruido gaussiano
+            mean = 0
+            var = 0.1 * 255
+            sigma = var ** 0.5
+            gaussian = np.random.normal(mean, sigma, imagen.shape)
+            imagen_con_ruido = imagen + gaussian
+            imagenes.append(imagen_con_ruido)
+            etiquetas.append(nombre_persona)
+
+    imagenes.append(np.zeros((100, 100), dtype=np.uint8))  # Imagen en blanco para representar "Desconocido"
+    etiquetas.append("Desconocido")
+
+    # Ruta donde se guardará el archivo etiquetas.npy
+    ruta_etiquetas = 'etiquetas.npy'
+
+    # Guardar las etiquetas en un archivo .npy
+    np.save(ruta_etiquetas, etiquetas)
 
     return imagenes, etiquetas
 
-def guardar_datos_entrenamiento(perfiles):
-    with open(ruta_datos_entrenamiento, "w") as f:
-        for perfil in perfiles:
-            f.write(f"Perfil ID: {perfil['_id']}\n")
-            f.write("Nombre: " + perfil.get("nombre", "Desconocido") + "\n")
-            f.write("Cédula: " + perfil.get("cedula", "Desconocido") + "\n")
-            f.write("Edad: " + perfil.get("edad", "Desconocida") + "\n")
-            f.write("\n")
+# Ruta del dataset
+ruta_dataset = 'dataset/'
 
-def entrenar_modelo():
-    imagenes, etiquetas = cargar_imagenes_desde_bd()
+# Cargar imágenes y etiquetas del dataset con aumento de datos
+imagenes, etiquetas = cargar_imagenes_y_etiquetas(ruta_dataset)
 
-    if len(imagenes) == 0:
-        print("No se encontraron imágenes en la base de datos para entrenar el modelo.")
-        return
+# Convertir listas a arrays numpy
+imagenes = np.array(imagenes)
+etiquetas = np.array(etiquetas)
 
-    modelo_reconocimiento.train(imagenes, np.array(etiquetas, dtype=np.int32))
-    modelo_reconocimiento.save(ruta_modelo_entrenado)
-    print(f"Modelo entrenado con éxito y guardado como '{ruta_modelo_entrenado}'.")
+# Normalizar las imágenes
+imagenes = imagenes.astype('float32') / 255.0
 
-    # Obtener información de perfiles para guardar en datos de entrenamiento
-    perfiles = list(coleccion_perfiles.find())
-    guardar_datos_entrenamiento(perfiles)
+# Crear y entrenar el clasificador KNN
+knn_clf = KNeighborsClassifier(n_neighbors=5, weights='distance', metric='euclidean')
+knn_clf.fit(imagenes.reshape(len(imagenes), -1), etiquetas)
 
-    print("Datos entrenados:")
-    for perfil in perfiles:
-        print(f"Perfil ID: {perfil['_id']}")
-        print("Nombre:", perfil.get("nombre", "Desconocido"))
-        print("Cédula:", perfil.get("cedula", "Desconocido"))
-        print("Edad:", perfil.get("edad", "Desconocida"))
-        print()
-
-if __name__ == "__main__":
-    entrenar_modelo()
+# Guardar el modelo entrenado con joblib
+joblib.dump(knn_clf, 'modelo_con_aumento_con_desconocido.pkl')
