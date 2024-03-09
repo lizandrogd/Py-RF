@@ -1,78 +1,62 @@
 import cv2
 import numpy as np
-import pymongo
 
-def detect_face(frame, face_cascade):
-    # Convierte la imagen a escala de grises
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+# Ruta donde se encuentra el modelo entrenado
+ruta_modelo_entrenado = "modelo_entrenado.xml"
 
-    # Detecta caras en la imagen en escala de grises
-    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+# Ruta donde se encuentran los datos de entrenamiento
+ruta_datos_entrenamiento = "datos_entrenamiento.txt"
 
-    return faces
+# Cargar el modelo de reconocimiento facial LBPH
+modelo_reconocimiento = cv2.face.LBPHFaceRecognizer_create()
+modelo_reconocimiento.read(ruta_modelo_entrenado)
 
-def main():
-    # Carga el clasificador Haar para detección de rostros
-    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+def cargar_datos_entrenamiento(ruta_datos_entrenamiento):
+    """
+    Carga los datos de entrenamiento desde un archivo de texto.
+    """
+    with open(ruta_datos_entrenamiento, "r") as f:
+        datos_entrenamiento = f.read()
+    return datos_entrenamiento
 
- # Establece la conexión a la base de datos MongoDB
-    client = pymongo.MongoClient("mongodb://lizandrogd:Nicolas2796*+@195.35.32.59:27017/")  # Cambia localhost y el puerto si es necesario
-    db = client["facialcheck"]  # Cambia "mydatabase" por el nombre de tu base de datos
-    collection = db["imagenes"]  # Cambia "userdata" por el nombre de tu colección
-
-    # Captura una imagen de referencia
-    reference_image = cv2.imread("C:\laragon\www\facialcheck\storage\app\storage")  # Reemplaza "tu_imagen_de_referencia.jpg" con la ruta de tu imagen de referencia
-    if reference_image is None:
-        print("No se pudo cargar la imagen de referencia.")
-        return
-
-    # Convierte la imagen de referencia a escala de grises
-    reference_gray = cv2.cvtColor(reference_image, cv2.COLOR_BGR2GRAY)
-
-    # Crea el objeto de reconocimiento facial LBPH
-    recognizer = cv2.face.LBPHFaceRecognizer_create()
-
-    # Entrena el reconocedor facial con la imagen de referencia
-    recognizer.train([reference_gray], np.array([0]))
-
-    # Abre la cámara
+def reconocimiento_facial(modelo, ruta_datos_entrenamiento):
+    """
+    Realiza el reconocimiento facial en tiempo real.
+    """
+    # Inicializar la cámara
     cap = cv2.VideoCapture(0)
 
-    # Verifica si la cámara se abrió correctamente
-    if not cap.isOpened():
-        print("Error al abrir la cámara")
-        return
+    # Cargar los datos de entrenamiento
+    datos_entrenamiento = cargar_datos_entrenamiento(ruta_datos_entrenamiento)
 
-    # Lee y muestra imágenes de la cámara hasta que se presione la tecla 'q'
     while True:
-        ret, frame = cap.read()  # Lee un fotograma de la cámara
-        if not ret:
-            print("Error al leer el fotograma de la cámara")
+        # Capturar un fotograma de la cámara
+        ret, frame = cap.read()
+
+        # Convertir la imagen a escala de grises
+        frame_gris = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+        # Realizar el reconocimiento facial
+        etiqueta, confianza = modelo.predict(frame_gris)
+
+        # Mostrar el nombre del perfil y la confianza
+        datos_reconocimiento = f'Perfil ID: {etiqueta}, Confianza: {confianza:.2f}'
+        cv2.putText(frame, datos_reconocimiento, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+
+        # Mostrar los datos de entrenamiento solo si la confianza es suficiente
+        if confianza < 70:  # Ajusta este umbral según sea necesario
+            cv2.putText(frame, datos_entrenamiento, (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+
+        # Mostrar el fotograma
+        cv2.imshow('Reconocimiento Facial', frame)
+
+        # Salir si se presiona la tecla 'q'
+        if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
-        # Detecta caras en el fotograma
-        faces = detect_face(frame, face_cascade)
-
-        # Compara cada cara detectada con la imagen de referencia
-        for (x, y, w, h) in faces:
-            face_gray = cv2.cvtColor(frame[y:y+h, x:x+w], cv2.COLOR_BGR2GRAY)
-            label, confidence = recognizer.predict(face_gray)
-
-            # Si la diferencia entre las imágenes es menor que un umbral, se considera una coincidencia
-            if confidence < 50:
-                cv2.putText(frame, "Usuario identificado", (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
-                # Aquí puedes mostrar los datos del usuario identificado
-            else:
-                cv2.putText(frame, "Usuario no identificado", (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
-
-        cv2.imshow("Camera", frame)  # Muestra el fotograma en una ventana llamada "Camera"
-
-        if cv2.waitKey(1) & 0xFF == ord('q'):  # Espera hasta que se presione la tecla 'q'
-            break
-
-    # Libera la cámara y cierra todas las ventanas
+    # Liberar la cámara y cerrar las ventanas
     cap.release()
     cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-    main()
+    reconocimiento_facial(modelo_reconocimiento, ruta_datos_entrenamiento)
