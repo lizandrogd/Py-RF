@@ -79,4 +79,4 @@ def entrenamiento(request):
     # Guardar el modelo entrenado con joblib
     joblib.dump(knn_clf, 'modelo_con_aumento_con_desconocido.pkl')
 
-    return HttpResponse("Entrenamiento realizado correctamente.")
+    return HttpResponse("success")
