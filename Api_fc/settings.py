@@ -57,6 +57,8 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'Api_fc.urls'
 
+DATA_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50 MB (50 * 1024 * 1024 bytes)
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
