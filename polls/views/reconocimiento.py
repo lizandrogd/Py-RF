@@ -3,7 +3,7 @@ import numpy as np
 import joblib
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from polls.views.consulta import procesar_resultados 
+from polls.views.consulta import procesar_resultados
 
 @csrf_exempt
 def reconocimiento_facial(request):
@@ -32,6 +32,11 @@ def reconocimiento_facial(request):
         for (x, y, w, h) in faces:
             roi_gray = gray[y:y+h, x:x+w]
             roi_gray_resized = cv2.resize(roi_gray, (100, 100))
+
+            # Aplicar preprocesamiento
+            roi_gray_resized = roi_gray_resized.astype('float32') / 255.0
+            
+            # Hacer predicción
             label, confianza = knn_clf.predict(roi_gray_resized.flatten().reshape(1, -1))[0], knn_clf.predict_proba(roi_gray_resized.flatten().reshape(1, -1))[0]
             
             # Obtener la etiqueta y la probabilidad máxima
