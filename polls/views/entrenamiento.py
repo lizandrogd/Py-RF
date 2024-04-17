@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import SVC
 import os
 import joblib 
 from django.http import HttpResponse
@@ -72,11 +73,18 @@ def entrenamiento(request):
     # Normalizar las imágenes
     imagenes = imagenes.astype('float32') / 255.0
 
-    # Crear y entrenar el clasificador KNN
+    # Entrenar el clasificador KNN
     knn_clf = KNeighborsClassifier(n_neighbors=5, weights='distance', metric='euclidean')
     knn_clf.fit(imagenes.reshape(len(imagenes), -1), etiquetas)
 
-    # Guardar el modelo entrenado con joblib
-    joblib.dump(knn_clf, 'modelo_con_aumento_con_desconocido.pkl')
+    # Guardar el modelo KNN entrenado con joblib
+    joblib.dump(knn_clf, 'modelo_knn_con_aumento_con_desconocido.pkl')
+
+    # Entrenar el clasificador SVM
+    svm_clf = SVC(kernel='rbf', C=1.0, gamma='scale')
+    svm_clf.fit(imagenes.reshape(len(imagenes), -1), etiquetas)
+
+    # Guardar el modelo SVM entrenado con joblib
+    joblib.dump(svm_clf, 'modelo_svm_con_aumento_con_desconocido.pkl')
 
     return HttpResponse("success")

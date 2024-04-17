@@ -11,8 +11,9 @@ def reconocimiento_facial(request):
         # Obtener la imagen de la solicitud POST
         image = request.FILES['image']
         
-        # Cargar el modelo entrenado
-        knn_clf = joblib.load('modelo_con_aumento_con_desconocido.pkl')
+        # Cargar los modelos entrenados (KNN y SVM)
+        knn_clf = joblib.load('modelo_knn_con_aumento_con_desconocido.pkl')
+        svm_clf = joblib.load('modelo_svm_con_aumento_con_desconocido.pkl')
 
         # Convertir la imagen a una matriz numpy
         nparr = np.frombuffer(image.read(), np.uint8)
@@ -36,20 +37,18 @@ def reconocimiento_facial(request):
             # Aplicar preprocesamiento
             roi_gray_resized = roi_gray_resized.astype('float32') / 255.0
             
-            # Hacer predicción
-            label, confianza = knn_clf.predict(roi_gray_resized.flatten().reshape(1, -1))[0], knn_clf.predict_proba(roi_gray_resized.flatten().reshape(1, -1))[0]
+            # Hacer predicción con KNN
+            knn_label = knn_clf.predict(roi_gray_resized.flatten().reshape(1, -1))[0]
             
-            # Obtener la etiqueta y la probabilidad máxima
-            etiqueta_max_prob = np.argmax(confianza)
-            max_prob = confianza[etiqueta_max_prob]
+            # Hacer predicción con SVM
+            svm_label = svm_clf.predict(roi_gray_resized.flatten().reshape(1, -1))[0]
 
-            # Verificar si el rostro fue reconocido o es desconocido
-            if max_prob < 0.8:
-                # Rostro desconocido
-                resultados.append("Desconocido")
+            # Verificar si las etiquetas predichas coinciden en ambos modelos
+            if knn_label == svm_label:
+                # Ambos modelos predicen la misma etiqueta
+                resultados.append(str(knn_label))
             else:
-                # Rostro reconocido
-                resultados.append(str(label))
+                resultados.append("Desconocido")
 
         # Retornar los resultados como un JSON
         return procesar_resultados(resultados)
