@@ -58,7 +58,7 @@ def reconocimiento_facial(request):
             else:
                 resultados.append("Desconocido")
 
-        # Retornar los resultados como un JSON
+        # Asegúrate de procesar todos los resultados obtenidos
         return procesar_resultados(resultados)
     else:
         return JsonResponse({"error": "Debe proporcionar una imagen en la solicitud POST."})

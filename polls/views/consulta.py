@@ -24,13 +24,17 @@ def procesar_resultados(resultados):
     # Iterar sobre cada cédula en los resultados
     for cedula in cedulas:
         # Buscar en la colección perfiles por la cédula
+        print("Buscando perfil para la cédula:", cedula)
         perfil = coleccion_perfiles.find_one({"cedula": cedula})
         if perfil:
             # Convertir el ObjectId a str
             perfil['_id'] = str(perfil['_id'])
             perfiles_encontrados.append(perfil)
             # Agregar registro al log
+            print("Perfil encontrado:", perfil)
             agregar_log(perfil)
+        else:
+            print("Perfil no encontrado para la cédula:", cedula)
 
     # Aquí puedes realizar cualquier procesamiento adicional de los perfiles encontrados
     return JsonResponse({"resultados": perfiles_encontrados})
@@ -53,3 +57,4 @@ def agregar_log(perfil):
 
     # Insertar el registro en la colección de log
     coleccion_log.insert_one(registro_log)
+    print("Registro de log agregado:", registro_log)
