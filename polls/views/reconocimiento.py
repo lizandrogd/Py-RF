@@ -38,7 +38,11 @@ def reconocimiento_facial(request):
                     knn_name = knn_clf.classes_[np.argmax(knn_prediction)]
                     print(knn_prediction)
                     # Utilizar SVM para predecir la etiqueta
-                    svm_prediction = svm_clf.predict_proba([face_encoding])
+                    svm_clf = SVC(kernel='linear', probability=True)
+                    svm_clf.fit(X, y)
+
+                    # Ahora puedes usar predict_proba
+                    svm_prediction= svm_clf.predict_proba([face_encoding])
                     svm_name = svm_clf.classes_[np.argmax(svm_prediction)]
                     print(svm_prediction)
                     # Verificar si las predicciones de KNN y SVM son iguales
