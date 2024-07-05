@@ -15,6 +15,7 @@ svm_clf = joblib.load('modelo_svm_con_aumento_con_desconocido.pkl')
 
 @csrf_exempt
 def reconocimiento_facial(request):
+    tolerance_threshold = 0.80  # Umbral de tolerancia
 
     if request.method == 'POST' and request.FILES.get('image'):
         try:
@@ -41,27 +42,26 @@ def reconocimiento_facial(request):
                     rostro_rgb_resized = cv2.resize(rostro, (224, 224))
                     rostro_rgb_resized_normalized = cv2.normalize(rostro_rgb_resized, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
                     
-                    # Convert image to RGB
+                    # Convertir imagen a RGB
                     rostro_rgb_resized_normalized_rgb = cv2.cvtColor(rostro_rgb_resized_normalized, cv2.COLOR_BGR2RGB)
                     
-                    # Extract facial encodings
+                    # Extraer codificaciones faciales
                     face_encodings = face_recognition.face_encodings(rostro_rgb_resized_normalized_rgb)
                     
-                    # Ensure that at least one encoding is found
+                    # Asegurarse de que al menos se encuentre una codificación
                     if face_encodings:
                         face_encoding = face_encodings[0]
                         
-                        # Use KNN to predict the label
+                        # Predecir con KNN
                         knn_prediction = knn_clf.predict_proba([face_encoding])
+                        knn_confidence = np.max(knn_prediction)
                         knn_name = knn_clf.classes_[np.argmax(knn_prediction)]
-                        print(f"KNN Prediction: {knn_name}")
                         
-                        # Use SVM to predict the label
+                        # Predecir con SVM
                         svm_scores = svm_clf.decision_function([face_encoding])
                         svm_probabilities = np.exp(svm_scores) / np.sum(np.exp(svm_scores), axis=1, keepdims=True)
+                        svm_confidence = np.max(svm_probabilities)
                         svm_name = svm_clf.classes_[np.argmax(svm_probabilities)]
-                        print(f"SVM Prediction: {svm_name}")
-                        
 
                         # Ruta principal del dataset
                         dataset_path = 'dataset/'
@@ -72,23 +72,26 @@ def reconocimiento_facial(request):
                         # Asegurarse de que solo se consideren directorios y se ordenen alfabéticamente
                         carpetas = sorted([carpeta for carpeta in carpetas if os.path.isdir(os.path.join(dataset_path, carpeta))])
 
-                        # Verificar que el índice sea válido
-                        if knn_name < len(carpetas):
-                            cedula = carpetas[knn_name]
-                            results.append(cedula)
-                        else:
+                        # Marcar como desconocido si la confianza es baja
+                        if knn_confidence < tolerance_threshold or svm_confidence < tolerance_threshold:
                             results.append("Desconocido")
-
+                        else:
+                            # Verificar índice válido
+                            if knn_name < len(carpetas):
+                                cedula = carpetas[knn_name]
+                                results.append(cedula)
+                            else:
+                                results.append("Desconocido")
                 
-                # Process results as needed (here using a function procesar_resultados)
+                # Procesar resultados como sea necesario (aquí se usa una función procesar_resultados)
                 print(f"Results: {results}")
                 return procesar_resultados(results)
             
             else:
-                return HttpResponseBadRequest("No faces detected in the image")
+                return HttpResponseBadRequest("No se detectaron rostros en la imagen")
         
         except Exception as e:
-            return HttpResponseBadRequest(f"Error processing image: {e}")
+            return HttpResponseBadRequest(f"Error al procesar la imagen: {e}")
     
     else:
-        return HttpResponseBadRequest("You must provide an image in a POST request.")
+        return HttpResponseBadRequest("Debe proporcionar una imagen en una solicitud POST.")
