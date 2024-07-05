@@ -22,7 +22,7 @@ def reconocimiento_facial(request):
             # Load image with face_recognition
             image = face_recognition.load_image_file(image_file)
              # Redimensionar la imagen a un tamaño específico si es necesario
-            image = cv2.resize(image, (224, 224))  # Si se desea redimensionar
+          
             # Detect faces in the image
             face_locations = face_recognition.face_locations(image)
             
