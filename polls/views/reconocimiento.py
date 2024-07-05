@@ -56,7 +56,7 @@ def reconocimiento_facial(request):
                 return HttpResponseBadRequest({"No se detectaron rostros en la imagen"})
         
         except Exception as e:
-            return HttpResponseBadRequest({"Error al procesar la imagen"})
+             return HttpResponseBadRequest(f"Debe proporcionar una imagen en la solicitud POST. Error: {e}")
     
     else:
         return HttpResponseBadRequest("Debe proporcionar una imagen en la solicitud POST.")
