@@ -33,7 +33,6 @@ def entrenamiento(request):
                     images.append(face_encodings[0])  # Tomamos el primer encoding como características
                     labels.append(foldername)  # Usamos el nombre de la carpeta como etiqueta
                     print("Etiqueta", labels)
-    
     # Convertimos a numpy arrays
     X = np.array(images)
     y = np.array(labels)
@@ -50,18 +49,16 @@ def entrenamiento(request):
     knn_classifier.fit(X_train, y_train)
 
     # Entrenamiento de SVM
-    svm_classifier = SVC(kernel='linear', C=1.0, gamma='scale', probability=True)
+    svm_classifier = SVC(kernel='linear', C=1.0, gamma='scale')
     svm_classifier.fit(X_train, y_train)
 
     # Guardar modelos entrenados
     knn_model_filename = 'modelo_knn_con_aumento_con_desconocido.pkl'
     svm_model_filename = 'modelo_svm_con_aumento_con_desconocido.pkl'
-    label_encoder_filename = 'label_encoder.pkl'
 
-    # Guardar modelos y label encoder en archivos .pkl
+    # Guardar modelos en archivos .pkl
     joblib.dump(knn_classifier, knn_model_filename)
     joblib.dump(svm_classifier, svm_model_filename)
-    joblib.dump(label_encoder, label_encoder_filename)
 
     # Calcular accuracies
     knn_accuracy = knn_classifier.score(X_test, y_test)
