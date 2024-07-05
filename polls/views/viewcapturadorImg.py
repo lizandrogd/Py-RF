@@ -37,7 +37,7 @@ def capturar_rostro(request):
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
             # Detectar rostros en la imagen
-            faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+            faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=7, minSize=(30, 30))
             
             if len(faces) == 0:
                 print("No se detectaron rostros en la imagen.")

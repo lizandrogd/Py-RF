@@ -52,7 +52,7 @@ def reconocimiento_facial(request):
             svm_confidence = np.max(svm_prob)
 
             # Verificar si las etiquetas predichas coinciden en ambos modelos y si superan un umbral de confianza
-            confidence_threshold = 0.99  # Aumentar umbral de confianza para mayor rigurosidad
+            confidence_threshold = 0.90  # Aumentar umbral de confianza para mayor rigurosidad
             if knn_label == svm_label and knn_confidence >= confidence_threshold and svm_confidence >= confidence_threshold:
                 resultados.append(str(knn_label))
             else:
