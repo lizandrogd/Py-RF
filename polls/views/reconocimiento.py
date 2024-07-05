@@ -53,7 +53,7 @@ def reconocimiento_facial(request):
                  return JsonResponse({"error": "No se dtectaron tostros en la imagen"})
         
         except Exception as e:            
-            return JsonResponse({"error": f'Error al procesar la imagen: {str(e)}'})
+            return JsonResponse({"error":  "Error al procesar la imagen"})
     
     else:
          return JsonResponse({"error": "Debe proporcionar una imagen en la solicitud POST."})
