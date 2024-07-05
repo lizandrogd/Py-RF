@@ -1,4 +1,4 @@
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseBadRequest
 from django.views.decorators.csrf import csrf_exempt
 import joblib
 import face_recognition
@@ -45,15 +45,14 @@ def reconocimiento_facial(request):
                         # Si las predicciones no son iguales, agregar "Desconocido"
                         results.append("Desconocido")
                 
-                # Función para procesar los resultados (puedes ajustar según tu necesidad)
-                        return procesar_resultados(results)
-
+                # Procesar los resultados como necesites (aquí se usa una función procesar_resultados)
+                return procesar_resultados(results)
             
             else:
-                 return JsonResponse({"error": "No se dtectaron tostros en la imagen"})
+                return JsonResponse({"error": "No se detectaron rostros en la imagen"})
         
-        except Exception as e:            
-            return JsonResponse({"error":  "Error al procesar la imagen"})
+        except Exception as e:
+            return JsonResponse({"error": "Error al procesar la imagen"})
     
     else:
-         return JsonResponse({"error": "Debe proporcionar una imagen en la solicitud POST."})
+        return HttpResponseBadRequest("Debe proporcionar una imagen en la solicitud POST.")
