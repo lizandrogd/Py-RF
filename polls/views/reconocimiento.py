@@ -67,6 +67,7 @@ def reconocimiento_facial(request):
                             results.append("Desconocido")
                 
                 # Process results as needed (here using a function procesar_resultados)
+                print(f"Results: {results}")
                 return procesar_resultados(results)
             
             else:
