@@ -21,14 +21,15 @@ def cargar_imagenes_y_etiquetas(ruta_dataset):
             imagen = face_recognition.load_image_file(imagen_ruta)
             caras_codificadas = face_recognition.face_encodings(imagen)
 
-            if caras_codificadas:
-                imagenes.append(caras_codificadas[0])
+            if len(caras_codificadas) > 0:
+                imagen_codificada = caras_codificadas[0]
+                imagenes.append(imagen_codificada)
                 etiquetas.append(nombre_persona)
 
                 # Aumento de datos
                 imagen_flip = np.fliplr(imagen)
                 caras_codificadas_flip = face_recognition.face_encodings(imagen_flip)
-                if caras_codificadas_flip:
+                if len(caras_codificadas_flip) > 0:
                     imagenes.append(caras_codificadas_flip[0])
                     etiquetas.append(nombre_persona)
 
@@ -36,13 +37,13 @@ def cargar_imagenes_y_etiquetas(ruta_dataset):
                     M = cv2.getRotationMatrix2D((imagen.shape[1] / 2, imagen.shape[0] / 2), angulo, 1)
                     imagen_rotada = cv2.warpAffine(imagen, M, (imagen.shape[1], imagen.shape[0]))
                     caras_codificadas_rotadas = face_recognition.face_encodings(imagen_rotada)
-                    if caras_codificadas_rotadas:
+                    if len(caras_codificadas_rotadas) > 0:
                         imagenes.append(caras_codificadas_rotadas[0])
                         etiquetas.append(nombre_persona)
 
                 imagen_desenfocada = cv2.GaussianBlur(imagen, (5, 5), 0)
                 caras_codificadas_desenfocadas = face_recognition.face_encodings(imagen_desenfocada)
-                if caras_codificadas_desenfocadas:
+                if len(caras_codificadas_desenfocadas) > 0:
                     imagenes.append(caras_codificadas_desenfocadas[0])
                     etiquetas.append(nombre_persona)
 
@@ -52,7 +53,7 @@ def cargar_imagenes_y_etiquetas(ruta_dataset):
                 gaussian = np.random.normal(mean, sigma, imagen.shape)
                 imagen_con_ruido = imagen + gaussian
                 caras_codificadas_con_ruido = face_recognition.face_encodings(imagen_con_ruido)
-                if caras_codificadas_con_ruido:
+                if len(caras_codificadas_con_ruido) > 0:
                     imagenes.append(caras_codificadas_con_ruido[0])
                     etiquetas.append(nombre_persona)
 
