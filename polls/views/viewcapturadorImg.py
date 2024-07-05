@@ -33,64 +33,62 @@ def capturar_rostro(request):
 
         return aligned_face_image
 
-def guardar_rostro(numero_documento, images):
-    # Carpeta para almacenar los rostros
-    carpeta = os.path.join('dataset', numero_documento)
-    print("Ruta de la carpeta:", carpeta)
+    def guardar_rostro(numero_documento, images):
+        # Carpeta para almacenar los rostros
+        carpeta = os.path.join('dataset', numero_documento)
+        print("Ruta de la carpeta:", carpeta)
 
-    # Crear la carpeta si no existe
-    if not os.path.exists(carpeta):
-        os.makedirs(carpeta)
-        print("Carpeta creada.")
-    else:
-        print("La carpeta ya existe.")
+        # Crear la carpeta si no existe
+        if not os.path.exists(carpeta):
+            os.makedirs(carpeta)
+            print("Carpeta creada.")
+        else:
+            print("La carpeta ya existe.")
 
-    # Procesar cada imagen
-    for i, image in enumerate(images):
-        # Leer la imagen desde los datos recibidos
-        nparr = np.frombuffer(image.read(), np.uint8)
-        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        # Procesar cada imagen
+        for i, image in enumerate(images):
+            # Leer la imagen desde los datos recibidos
+            nparr = np.frombuffer(image.read(), np.uint8)
+            img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
-        if img is None:
-            print("Error al leer la imagen.")
-            continue
+            if img is None:
+                print("Error al leer la imagen.")
+                continue
 
-        # Asegurarse de que la imagen esté en formato RGB
-        rgb_image = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            # Asegurarse de que la imagen esté en formato RGB
+            rgb_image = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-        # Detectar rostros en la imagen
-        face_locations = face_recognition.face_locations(rgb_image)
-        face_landmarks_list = face_recognition.face_landmarks(rgb_image)
+            # Detectar rostros en la imagen
+            face_locations = face_recognition.face_locations(rgb_image)
+            face_landmarks_list = face_recognition.face_landmarks(rgb_image)
 
-        if len(face_locations) == 0:
-            print("No se detectaron rostros en la imagen.")
-            continue
+            if len(face_locations) == 0:
+                print("No se detectaron rostros en la imagen.")
+                continue
 
-        # Procesar cada rostro detectado
-        for face_location, face_landmarks in zip(face_locations, face_landmarks_list):
-            top, right, bottom, left = face_location
-            rostro = rgb_image[top:bottom, left:right]
+            # Procesar cada rostro detectado
+            for face_location, face_landmarks in zip(face_locations, face_landmarks_list):
+                top, right, bottom, left = face_location
+                rostro = rgb_image[top:bottom, left:right]
 
-            # Convertir el rostro a escala de grises
-           # Convertir el rostro a escala de grises de 8 bits
-            rostro_gray = cv2.cvtColor(rostro, cv2.COLOR_RGB2GRAY)
-            rostro_gray_8bit = cv2.normalize(rostro_gray, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
+                # Convertir el rostro a escala de grises
+                rostro_gray = cv2.cvtColor(rostro, cv2.COLOR_RGB2GRAY)
+                rostro_gray_8bit = cv2.normalize(rostro_gray, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
 
-            # Redimensionar la imagen a un tamaño específico si es necesario
-            rostro_gray_resized = cv2.resize(rostro_gray_8bit, (100, 100))  # Si se desea redimensionar
+                # Redimensionar la imagen a un tamaño específico si es necesario
+                rostro_gray_resized = cv2.resize(rostro_gray_8bit, (100, 100))  # Si se desea redimensionar
 
-            # Generar un código aleatorio de 4 letras
-            codigo_aleatorio = ''.join(random.choices(string.ascii_lowercase, k=4))
+                # Generar un código aleatorio de 4 letras
+                codigo_aleatorio = ''.join(random.choices(string.ascii_lowercase, k=4))
 
-            # Guardar la imagen del rostro
-            nombre_archivo = f"{numero_documento}_{codigo_aleatorio}.png"
-            ruta_guardado = os.path.join(carpeta, nombre_archivo)
-            try:
-                cv2.imwrite(ruta_guardado, rostro_gray_resized)
-                print(f"Rostro guardado correctamente: {ruta_guardado}")
-            except cv2.error as e:
-                print(f"Error al guardar el rostro: {e}")
-
+                # Guardar la imagen del rostro
+                nombre_archivo = f"{numero_documento}_{codigo_aleatorio}.png"
+                ruta_guardado = os.path.join(carpeta, nombre_archivo)
+                try:
+                    cv2.imwrite(ruta_guardado, rostro_gray_resized)
+                    print(f"Rostro guardado correctamente: {ruta_guardado}")
+                except cv2.error as e:
+                    print(f"Error al guardar el rostro: {e}")
 
     # Obtener el número de documento y las imágenes de la solicitud POST
     numero_documento = request.POST.get("numero_documento", "")
