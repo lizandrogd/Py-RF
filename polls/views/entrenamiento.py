@@ -32,7 +32,7 @@ def entrenamiento(request):
                 if len(face_encodings) > 0:
                     images.append(face_encodings[0])  # Tomamos el primer encoding como características
                     labels.append(foldername)  # Usamos el nombre de la carpeta como etiqueta
-
+                    print("Etiqueta", labels)
     # Convertimos a numpy arrays
     X = np.array(images)
     y = np.array(labels)
