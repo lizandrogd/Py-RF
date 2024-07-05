@@ -4,7 +4,7 @@ import numpy as np
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 import os
-import joblib 
+import joblib
 from django.http import HttpResponse
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.metrics import accuracy_score
@@ -63,14 +63,11 @@ def cargar_imagenes_y_etiquetas(ruta_dataset):
     # Guardar etiquetas
     np.save('etiquetas.npy', etiquetas)
 
-    return imagenes, etiquetas
+    return np.array(imagenes), np.array(etiquetas)
 
 def entrenamiento(request):
     ruta_dataset = 'dataset/'
     imagenes, etiquetas = cargar_imagenes_y_etiquetas(ruta_dataset)
-
-    imagenes = np.array(imagenes)
-    etiquetas = np.array(etiquetas)
 
     X_train, X_test, y_train, y_test = train_test_split(imagenes, etiquetas, test_size=0.2, random_state=42)
 
