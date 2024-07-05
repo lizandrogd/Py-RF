@@ -33,12 +33,13 @@ def reconocimiento_facial(request):
                 for face_encoding in face_encodings:
                     # Utilizar KNN para predecir la etiqueta
                     knn_prediction = knn_clf.predict([face_encoding])
-                    
+                    print(knn_prediction)
                     # Utilizar SVM para predecir la etiqueta
                     svm_prediction = svm_clf.predict([face_encoding])
-                    
+                    print(svm_prediction)
                     # Verificar si las predicciones de KNN y SVM son iguales
                     if knn_prediction[0] == svm_prediction[0]:
+
                         # Agregar la etiqueta predicha solo si ambas predicciones son iguales
                         results.append(str(knn_prediction[0]))
                     else:
