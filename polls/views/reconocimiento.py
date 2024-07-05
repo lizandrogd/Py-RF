@@ -71,7 +71,8 @@ def reconocimiento_facial(request):
 
                         # Asegurarse de que solo se consideren directorios y se ordenen alfabéticamente
                         carpetas = sorted([carpeta for carpeta in carpetas if os.path.isdir(os.path.join(dataset_path, carpeta))])
-
+                        print(knn_confidence)
+                        print(svm_confidence)
                         # Marcar como desconocido si la confianza es baja
                         if knn_confidence < tolerance_threshold or svm_confidence < tolerance_threshold:
                             results.append("Desconocido")
