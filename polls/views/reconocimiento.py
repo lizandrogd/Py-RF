@@ -2,6 +2,8 @@ from django.http import JsonResponse, HttpResponseBadRequest
 from django.views.decorators.csrf import csrf_exempt
 import joblib
 import face_recognition
+import numpy as np
+
 from polls.views.consulta import procesar_resultados
 
 # Cargar los modelos entrenados (KNN y SVM)
