@@ -5,6 +5,7 @@ import cv2
 import face_recognition
 import numpy as np
 from sklearn.svm import SVC
+import os
 
 from polls.views.consulta import procesar_resultados
 
@@ -14,6 +15,7 @@ svm_clf = joblib.load('modelo_svm_con_aumento_con_desconocido.pkl')
 
 @csrf_exempt
 def reconocimiento_facial(request):
+
     if request.method == 'POST' and request.FILES.get('image'):
         try:
             # Get image from request
@@ -60,11 +62,23 @@ def reconocimiento_facial(request):
                         svm_name = svm_clf.classes_[np.argmax(svm_probabilities)]
                         print(f"SVM Prediction: {svm_name}")
                         
-                        # Check if KNN and SVM predictions are equal
-                        if knn_name == svm_name:
-                            results.append(str(knn_name))
+
+                        # Ruta principal del dataset
+                        dataset_path = 'dataset/'
+
+                        # Obtener una lista de las carpetas en el directorio del dataset
+                        carpetas = os.listdir(dataset_path)
+
+                        # Asegurarse de que solo se consideren directorios y se ordenen alfabéticamente
+                        carpetas = sorted([carpeta for carpeta in carpetas if os.path.isdir(os.path.join(dataset_path, carpeta))])
+
+                        # Verificar que el índice sea válido
+                        if knn_name < len(carpetas):
+                            cedula = carpetas[knn_name]
+                            results.append(cedula)
                         else:
                             results.append("Desconocido")
+
                 
                 # Process results as needed (here using a function procesar_resultados)
                 print(f"Results: {results}")
