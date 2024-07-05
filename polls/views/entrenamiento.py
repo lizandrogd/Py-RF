@@ -33,7 +33,8 @@ def cargar_imagenes_y_etiquetas(ruta_dataset):
                     etiquetas.append(nombre_persona)
 
                 for angulo in range(-20, 21, 5):
-                    imagen_rotada = cv2.rotate(imagen, angulo)
+                    M = cv2.getRotationMatrix2D((imagen.shape[1] / 2, imagen.shape[0] / 2), angulo, 1)
+                    imagen_rotada = cv2.warpAffine(imagen, M, (imagen.shape[1], imagen.shape[0]))
                     caras_codificadas_rotadas = face_recognition.face_encodings(imagen_rotada)
                     if caras_codificadas_rotadas:
                         imagenes.append(caras_codificadas_rotadas[0])
@@ -91,6 +92,15 @@ def entrenamiento(request):
     # Guardar modelo SVM
     joblib.dump(svm_clf, 'modelo_svm_con_aumento_con_desconocido.pkl')
 
-    response = f"Entrenamiento completado.<br>KNN Accuracy: {knn_accuracy:.2f}<br>SVM Accuracy: {svm_accuracy:.2f}"
+    num_imagenes = len(imagenes)
+    num_perfiles = len(set(etiquetas))
+
+    response = (
+        f"Entrenamiento completado.<br>"
+        f"KNN Accuracy: {knn_accuracy:.2f}<br>"
+        f"SVM Accuracy: {svm_accuracy:.2f}<br>"
+        f"Número de imágenes entrenadas: {num_imagenes}<br>"
+        f"Número de perfiles entrenados: {num_perfiles}"
+    )
 
     return HttpResponse(response)
