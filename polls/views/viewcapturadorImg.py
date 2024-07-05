@@ -12,26 +12,6 @@ import face_recognition
 @require_http_methods(["POST"])
 def capturar_rostro(request):
 
-    def alinear_rostro(img, face_landmarks):
-        left_eye = face_landmarks['left_eye']
-        right_eye = face_landmarks['right_eye']
-
-        # Calcular el centro de los ojos
-        left_eye_center = np.mean(left_eye, axis=0).astype("int")
-        right_eye_center = np.mean(right_eye, axis=0).astype("int")
-
-        # Calcular el ángulo entre los ojos
-        dy = right_eye_center[1] - left_eye_center[1]
-        dx = right_eye_center[0] - left_eye_center[0]
-        angle = np.degrees(np.arctan2(dy, dx)) - 180
-
-        # Rotar la imagen para alinear los ojos
-        eyes_center = ((left_eye_center[0] + right_eye_center[0]) // 2,
-                       (left_eye_center[1] + right_eye_center[1]) // 2)
-        M = cv2.getRotationMatrix2D(eyes_center, angle, 1)
-        aligned_face_image = cv2.warpAffine(img, M, (img.shape[1], img.shape[0]))
-
-        return aligned_face_image
 
     def guardar_rostro(numero_documento, images):
         # Carpeta para almacenar los rostros
@@ -71,12 +51,15 @@ def capturar_rostro(request):
                 top, right, bottom, left = face_location
                 rostro = rgb_image[top:bottom, left:right]
 
-                # Convertir el rostro a escala de grises
-                rostro_gray = cv2.cvtColor(rostro, cv2.COLOR_RGB2GRAY)
-                rostro_gray_8bit = cv2.normalize(rostro_gray, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
+                # Convertir el rostro a RGB (si no lo está ya)
+                rostro_rgb = cv2.cvtColor(rostro, cv2.COLOR_GRAY2RGB)
 
                 # Redimensionar la imagen a un tamaño específico si es necesario
-                rostro_gray_resized = cv2.resize(rostro_gray_8bit, (100, 100))  # Si se desea redimensionar
+                rostro_rgb_resized = cv2.resize(rostro_rgb, (224, 224))  # Si se desea redimensionar
+
+                # Si necesitas normalizar la imagen en el rango de 0 a 255
+                rostro_rgb_resized_normalized = cv2.normalize(rostro_rgb_resized, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
+
 
                 # Generar un código aleatorio de 4 letras
                 codigo_aleatorio = ''.join(random.choices(string.ascii_lowercase, k=4))
@@ -85,7 +68,7 @@ def capturar_rostro(request):
                 nombre_archivo = f"{numero_documento}_{codigo_aleatorio}.png"
                 ruta_guardado = os.path.join(carpeta, nombre_archivo)
                 try:
-                    cv2.imwrite(ruta_guardado, rostro_gray_resized)
+                    cv2.imwrite(ruta_guardado, rostro_rgb_resized_normalized)
                     print(f"Rostro guardado correctamente: {ruta_guardado}")
                 except cv2.error as e:
                     print(f"Error al guardar el rostro: {e}")
