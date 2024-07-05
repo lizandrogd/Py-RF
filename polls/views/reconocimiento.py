@@ -3,6 +3,7 @@ from django.views.decorators.csrf import csrf_exempt
 import joblib
 import face_recognition
 import numpy as np
+from sklearn.svm import SVC  # Importa SVC desde scikit-learn
 
 from polls.views.consulta import procesar_resultados
 
