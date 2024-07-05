@@ -52,12 +52,12 @@ def reconocimiento_facial(request):
                         # Use KNN to predict the label
                         knn_prediction = knn_clf.predict_proba([face_encoding])
                         knn_name = knn_clf.classes_[np.argmax(knn_prediction)]
-                        
+                        print(knn_name)
                         # Use SVM to predict the label
                         svm_scores = svm_clf.decision_function([face_encoding])
                         svm_probabilities = np.exp(svm_scores) / np.sum(np.exp(svm_scores), axis=1, keepdims=True)
                         svm_name = svm_clf.classes_[np.argmax(svm_probabilities)]
-                        
+                        print(svm_name)
                         # Check if KNN and SVM predictions are equal
                         if knn_name != svm_name:
                             # Add predicted label only if both predictions are equal
