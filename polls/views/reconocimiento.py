@@ -11,6 +11,7 @@ from polls.views.consulta import procesar_resultados
 # Load trained models (KNN and SVM)
 knn_clf = joblib.load('modelo_knn_con_aumento_con_desconocido.pkl')
 svm_clf = joblib.load('modelo_svm_con_aumento_con_desconocido.pkl')
+label_encoder = joblib.load('label_encoder.pkl')
 
 @csrf_exempt
 def reconocimiento_facial(request):
@@ -51,13 +52,15 @@ def reconocimiento_facial(request):
                         
                         # Use KNN to predict the label
                         knn_prediction = knn_clf.predict_proba([face_encoding])
-                        knn_name = knn_clf.classes_[np.argmax(knn_prediction)]
+                        knn_label_index = np.argmax(knn_prediction)
+                        knn_name = label_encoder.inverse_transform([knn_label_index])[0]
                         print(f"KNN Prediction: {knn_name}")
                         
                         # Use SVM to predict the label
                         svm_scores = svm_clf.decision_function([face_encoding])
                         svm_probabilities = np.exp(svm_scores) / np.sum(np.exp(svm_scores), axis=1, keepdims=True)
-                        svm_name = svm_clf.classes_[np.argmax(svm_probabilities)]
+                        svm_label_index = np.argmax(svm_probabilities)
+                        svm_name = label_encoder.inverse_transform([svm_label_index])[0]
                         print(f"SVM Prediction: {svm_name}")
                         
                         # Check if KNN and SVM predictions are equal
@@ -67,7 +70,6 @@ def reconocimiento_facial(request):
                             results.append("Desconocido")
                 
                 # Process results as needed (here using a function procesar_resultados)
-                print(f"Results: {results}")
                 return procesar_resultados(results)
             
             else:
