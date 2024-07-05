@@ -5,8 +5,8 @@ import face_recognition
 from polls.views.consulta import procesar_resultados
 
 # Cargar los modelos entrenados (KNN y SVM)
-knn_clf = joblib.load('modelo_knn_con_aumento_con_desconocido.pkl', allow_pickle=True)
-svm_clf = joblib.load('modelo_svm_con_aumento_con_desconocido.pkl', allow_pickle=True)
+knn_clf = joblib.load('modelo_knn_con_aumento_con_desconocido.pkl')
+svm_clf = joblib.load('modelo_svm_con_aumento_con_desconocido.pkl')
 
 @csrf_exempt
 def reconocimiento_facial(request):
@@ -32,16 +32,17 @@ def reconocimiento_facial(request):
                 # Iterar sobre cada encoding facial encontrado
                 for face_encoding in face_encodings:
                     # Utilizar KNN para predecir la etiqueta
-                    knn_prediction = knn_clf.predict([face_encoding])
+                    knn_prediction = knn_clf.predict_proba([face_encoding])
+                    knn_name = knn_clf.classes_[np.argmax(knn_prediction)]
                     print(knn_prediction)
                     # Utilizar SVM para predecir la etiqueta
-                    svm_prediction = svm_clf.predict([face_encoding])
+                    svm_prediction = svm_clf.predict_proba([face_encoding])
+                    svm_name = svm_clf.classes_[np.argmax(svm_prediction)]
                     print(svm_prediction)
                     # Verificar si las predicciones de KNN y SVM son iguales
-                    if knn_prediction[0] == svm_prediction[0]:
-
+                    if knn_name != svm_name:
                         # Agregar la etiqueta predicha solo si ambas predicciones son iguales
-                        results.append(str(knn_prediction[0]))
+                        results.append(str(knn_name))
                     else:
                         # Si las predicciones no son iguales, agregar "Desconocido"
                         results.append("Desconocido")
