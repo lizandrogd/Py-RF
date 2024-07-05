@@ -6,12 +6,13 @@ import string
 from django.http import HttpResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
+import face_recognition
 
 @csrf_exempt
 @require_http_methods(["POST"])
 def capturar_rostro(request):
 
-    def guardar_rostro(numero_documento, images, face_cascade):
+    def guardar_rostro(numero_documento, images):
         # Carpeta para almacenar los rostros
         carpeta = os.path.join('dataset', numero_documento)
         print("Ruta de la carpeta:", carpeta)
@@ -33,19 +34,20 @@ def capturar_rostro(request):
                 print("Error al leer la imagen.")
                 continue
 
-            # Convertir la imagen a escala de grises
-            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
             # Detectar rostros en la imagen
-            faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=7, minSize=(30, 30))
-            
-            if len(faces) == 0:
+            face_locations = face_recognition.face_locations(img)
+
+            if len(face_locations) == 0:
                 print("No se detectaron rostros en la imagen.")
                 continue
 
             # Procesar cada rostro detectado
-            for (x, y, w, h) in faces:
-                rostro = gray[y:y+h, x:x+w]
+            for face_location in face_locations:
+                top, right, bottom, left = face_location
+                rostro = img[top:bottom, left:right]
+
+                # Convertir el rostro a escala de grises
+                rostro_gray = cv2.cvtColor(rostro, cv2.COLOR_BGR2GRAY)
 
                 # Generar un código aleatorio de 4 letras
                 codigo_aleatorio = ''.join(random.choices(string.ascii_lowercase, k=4))
@@ -54,13 +56,10 @@ def capturar_rostro(request):
                 nombre_archivo = f"{numero_documento}_{codigo_aleatorio}.png"
                 ruta_guardado = os.path.join(carpeta, nombre_archivo)
                 try:
-                    cv2.imwrite(ruta_guardado, rostro)
+                    cv2.imwrite(ruta_guardado, rostro_gray)
                     print(f"Rostro guardado correctamente: {ruta_guardado}")
                 except cv2.error as e:
                     print(f"Error al guardar el rostro: {e}")
-
-    # Cargar el clasificador de rostros en cascada de Haar
-    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
     # Obtener el número de documento y las imágenes de la solicitud POST
     numero_documento = request.POST.get("numero_documento", "")
@@ -70,7 +69,7 @@ def capturar_rostro(request):
     print("Imágenes recibidas:", len(images))
 
     if numero_documento and images:
-        guardar_rostro(numero_documento, images, face_cascade)
+        guardar_rostro(numero_documento, images)
         return HttpResponse("Captura de rostros realizada correctamente.")
     else:
         return HttpResponse("Por favor, proporcione tanto el parámetro numero_documento como al menos una imagen en la solicitud POST.")
