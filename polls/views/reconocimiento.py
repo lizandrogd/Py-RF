@@ -46,7 +46,7 @@ def reconocimiento_facial(request):
                     else:
                         # Si las predicciones no son iguales, agregar "Desconocido"
                         results.append("Desconocido")
-                
+                        print (knn_name)
                 # Procesar los resultados como necesites (aquí se usa una función procesar_resultados)
                 return procesar_resultados(results)
             
