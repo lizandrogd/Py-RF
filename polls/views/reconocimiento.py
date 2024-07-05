@@ -3,11 +3,11 @@ from django.views.decorators.csrf import csrf_exempt
 import joblib
 import face_recognition
 import numpy as np
-from sklearn.svm import SVC  # Importa SVC desde scikit-learn
+from sklearn.svm import SVC  # Import SVC from scikit-learn
 
 from polls.views.consulta import procesar_resultados
 
-# Cargar los modelos entrenados (KNN y SVM)
+# Load trained models (KNN and SVM)
 knn_clf = joblib.load('modelo_knn_con_aumento_con_desconocido.pkl')
 svm_clf = joblib.load('modelo_svm_con_aumento_con_desconocido.pkl')
 
@@ -15,49 +15,50 @@ svm_clf = joblib.load('modelo_svm_con_aumento_con_desconocido.pkl')
 def reconocimiento_facial(request):
     if request.method == 'POST' and request.FILES.get('image'):
         try:
-            # Obtener la imagen del request
+            # Get image from request
             image_file = request.FILES['image']
             
-            # Leer la imagen con face_recognition
+            # Load image with face_recognition
             image = face_recognition.load_image_file(image_file)
             
-            # Detectar rostros en la imagen
+            # Detect faces in the image
             face_locations = face_recognition.face_locations(image)
             
-            # Si se detectan rostros, procesar la imagen
+            # If faces are detected, process the image
             if face_locations:
-                # Extraer encodings faciales de los rostros detectados
+                # Extract facial encodings from detected faces
                 face_encodings = face_recognition.face_encodings(image, face_locations)
                 
-                # Inicializar lista para almacenar resultados
+                # Initialize list to store results
                 results = []
                 
-                # Iterar sobre cada encoding facial encontrado
+                # Iterate over each facial encoding found
                 for face_encoding in face_encodings:
-                    # Utilizar KNN para predecir la etiqueta
+                    # Use KNN to predict the label
                     knn_prediction = knn_clf.predict_proba([face_encoding])
                     knn_name = knn_clf.classes_[np.argmax(knn_prediction)]
                     
-                    # Utilizar SVM para predecir la etiqueta
-                    svm_prediction = svm_clf.predict_proba([face_encoding])
-                    svm_name = svm_clf.classes_[np.argmax(svm_prediction)]
+                    # Use SVM to predict the label
+                    svm_scores = svm_clf.decision_function([face_encoding])
+                    svm_probabilities = np.exp(svm_scores) / np.sum(np.exp(svm_scores), axis=1, keepdims=True)
+                    svm_name = svm_clf.classes_[np.argmax(svm_probabilities)]
                     
-                    # Verificar si las predicciones de KNN y SVM son iguales
+                    # Check if KNN and SVM predictions are equal
                     if knn_name != svm_name:
-                        # Agregar la etiqueta predicha solo si ambas predicciones son iguales
+                        # Add predicted label only if both predictions are equal
                         results.append(str(knn_name))
                     else:
-                        # Si las predicciones no son iguales, agregar "Desconocido"
-                        results.append("Desconocido")
+                        # If predictions are not equal, add "Unknown"
+                        results.append("Unknown")
                 
-                # Procesar los resultados como necesites (aquí se usa una función procesar_resultados)
+                # Process results as needed (here using a function procesar_resultados)
                 return procesar_resultados(results)
             
             else:
-                return HttpResponseBadRequest("No se detectaron rostros en la imagen")
+                return HttpResponseBadRequest("No faces detected in the image")
         
         except Exception as e:
-            return HttpResponseBadRequest(f"Error al procesar la imagen: {e}")
+            return HttpResponseBadRequest(f"Error processing image: {e}")
     
     else:
-        return HttpResponseBadRequest("Debe proporcionar una imagen en la solicitud POST.")
+        return HttpResponseBadRequest("You must provide an image in a POST request.")
