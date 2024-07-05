@@ -1,64 +1,80 @@
-import cv2
-import numpy as np
-import joblib
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+import joblib
 import face_recognition
-from polls.views.consulta import procesar_resultados
+
+# Cargar los modelos entrenados (KNN y SVM)
+knn_clf = joblib.load('modelo_knn_con_aumento_con_desconocido.pkl')
+svm_clf = joblib.load('modelo_svm_con_aumento_con_desconocido.pkl')
 
 @csrf_exempt
 def reconocimiento_facial(request):
     if request.method == 'POST' and request.FILES.get('image'):
-        # Obtener la imagen de la solicitud POST
-        image = request.FILES['image']
-        
-        # Cargar los modelos entrenados (KNN y SVM)
-        knn_clf = joblib.load('modelo_knn_con_aumento_con_desconocido.pkl')
-        svm_clf = joblib.load('modelo_svm_con_aumento_con_desconocido.pkl')
-
-        # Convertir la imagen a una matriz numpy
-        nparr = np.frombuffer(image.read(), np.uint8)
-        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-
-        # Mejorar el contraste de la imagen
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        gray = cv2.equalizeHist(gray)
-
-        # Detectar rostros en la imagen
-        face_locations = face_recognition.face_locations(img, model='cnn')  # Usar el modelo 'cnn' puede ser más robusto
-
-        resultados = []
-
-        for face_location in face_locations:
-            top, right, bottom, left = face_location
-            face_image = img[top:bottom, left:right]
-
-            # Convertir el rostro a escala de grises y redimensionar
-            face_image_gray = cv2.cvtColor(face_image, cv2.COLOR_BGR2GRAY)
-            face_image_resized = cv2.resize(face_image_gray, (100, 100))
-
-            # Aplicar preprocesamiento
-            face_image_resized = face_image_resized.astype('float32') / 255.0
-            face_image_resized_flattened = face_image_resized.flatten().reshape(1, -1)
-
-            # Hacer predicción con KNN
-            knn_prob = knn_clf.predict_proba(face_image_resized_flattened)
-            knn_label = knn_clf.classes_[np.argmax(knn_prob)]
-            knn_confidence = np.max(knn_prob)
-
-            # Hacer predicción con SVM
-            svm_prob = svm_clf.decision_function(face_image_resized_flattened)
-            svm_label = svm_clf.classes_[np.argmax(svm_prob)]
-            svm_confidence = np.max(svm_prob)
-
-            # Verificar si las etiquetas predichas coinciden en ambos modelos y si superan un umbral de confianza
-            confidence_threshold = 0.95  # Ajusta el umbral según la precisión que desees
-            if knn_label == svm_label and knn_confidence >= confidence_threshold and svm_confidence >= confidence_threshold:
-                resultados.append(str(knn_label))
+        try:
+            # Obtener la imagen del request
+            image_file = request.FILES['image']
+            
+            # Leer la imagen con face_recognition
+            image = face_recognition.load_image_file(image_file)
+            
+            # Detectar rostros en la imagen
+            face_locations = face_recognition.face_locations(image)
+            
+            # Si se detectan rostros, procesar la imagen
+            if face_locations:
+                # Extraer encodings faciales de los rostros detectados
+                face_encodings = face_recognition.face_encodings(image, face_locations)
+                
+                # Inicializar lista para almacenar resultados
+                results = []
+                
+                # Iterar sobre cada encoding facial encontrado
+                for face_encoding in face_encodings:
+                    # Utilizar KNN para predecir la etiqueta
+                    knn_prediction = knn_clf.predict([face_encoding])
+                    
+                    # Utilizar SVM para predecir la etiqueta
+                    svm_prediction = svm_clf.predict([face_encoding])
+                    
+                    # Verificar si las predicciones de KNN y SVM son iguales
+                    if knn_prediction[0] == svm_prediction[0]:
+                        # Agregar la etiqueta predicha solo si ambas predicciones son iguales
+                        results.append(str(knn_prediction[0]))
+                    else:
+                        # Si las predicciones no son iguales, agregar "Desconocido"
+                        results.append("Desconocido")
+                
+                # Función para procesar los resultados (puedes ajustar según tu necesidad)
+                def procesar_resultados(resultados):
+                    # Aquí podrías realizar cualquier procesamiento adicional de los resultados
+                    return resultados
+                
+                # Llamar a la función para procesar resultados y retornar la respuesta
+                response_data = {
+                    'success': True,
+                    'message': 'Rostros detectados',
+                    'face_locations': face_locations,
+                    'results': procesar_resultados(results)
+                }
+            
             else:
-                resultados.append("Desconocido")
-
-        # Asegúrate de procesar todos los resultados obtenidos
-        return procesar_resultados(resultados)
+                response_data = {
+                    'success': False,
+                    'message': 'No se detectaron rostros en la imagen'
+                }
+        
+        except Exception as e:
+            response_data = {
+                'success': False,
+                'message': f'Error al procesar la imagen: {str(e)}'
+            }
+        
+        return JsonResponse(response_data)
+    
     else:
-        return JsonResponse({"error": "Debe proporcionar una imagen en la solicitud POST."})
+        # Manejar el caso en el que no se reciba una imagen
+        response_data = {
+            'success': False,
+            'message': 'No se proporcionó una imagen válida'
+        }
+        return JsonResponse(response_data)
