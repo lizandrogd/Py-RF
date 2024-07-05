@@ -74,6 +74,9 @@ def capturar_rostro(request):
                 # Convertir el rostro a escala de grises
                 rostro_gray = cv2.cvtColor(rostro_alineado, cv2.COLOR_BGR2GRAY)
 
+                # Redimensionar la imagen a un tamaño específico si es necesario
+                # rostro_gray_resized = cv2.resize(rostro_gray, (100, 100))  # Si se desea redimensionar
+
                 # Generar un código aleatorio de 4 letras
                 codigo_aleatorio = ''.join(random.choices(string.ascii_lowercase, k=4))
 
