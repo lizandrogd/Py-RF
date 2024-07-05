@@ -13,12 +13,21 @@ def cargar_imagenes_y_etiquetas(ruta_dataset):
     imagenes = []
     etiquetas = []
 
-    for nombre_persona in os.listdir(ruta_dataset):
-        carpeta_persona = os.path.join(ruta_dataset, nombre_persona)
-
-        for imagen_nombre in os.listdir(carpeta_persona):
-            imagen_ruta = os.path.join(carpeta_persona, imagen_nombre)
-            imagen = face_recognition.load_image_file(imagen_ruta, mode='RGB')
+    import os
+    import face_recognition
+    import numpy as np
+    import cv2
+    
+    def cargar_imagenes_y_etiquetas(ruta_dataset):
+        imagenes = []
+        etiquetas = []
+        for nombre_persona in os.listdir(ruta_dataset):
+            carpeta_persona = os.path.join(ruta_dataset, nombre_persona)
+            for imagen_nombre in os.listdir(carpeta_persona):
+                imagen_ruta = os.path.join(carpeta_persona, imagen_nombre)
+                imagen = face_recognition.load_image_file(imagen_ruta)
+                caras_codificadas = face_recognition.face_encodings(imagen, num_jitters=1)in(carpeta_persona, imagen_nombre)
+            imagen = face_recognition.load_image_file(imagen_ruta)
             caras_codificadas = face_recognition.face_encodings(imagen, num_jitters=1)
 
             if len(caras_codificadas) > 0:
