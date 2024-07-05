@@ -22,15 +22,35 @@ def reconocimiento_facial(request):
 
         # Detectar rostros en la imagen
         face_locations = face_recognition.face_locations(img)
+        face_landmarks_list = face_recognition.face_landmarks(img)
 
         resultados = []
 
-        for face_location in face_locations:
+        for face_location, face_landmarks in zip(face_locations, face_landmarks_list):
             top, right, bottom, left = face_location
             face_image = img[top:bottom, left:right]
 
+            # Obtener las ubicaciones de los ojos
+            left_eye = face_landmarks['left_eye']
+            right_eye = face_landmarks['right_eye']
+
+            # Calcular el centro de los ojos
+            left_eye_center = np.mean(left_eye, axis=0).astype("int")
+            right_eye_center = np.mean(right_eye, axis=0).astype("int")
+
+            # Calcular el ángulo entre los ojos
+            dy = right_eye_center[1] - left_eye_center[1]
+            dx = right_eye_center[0] - left_eye_center[0]
+            angle = np.degrees(np.arctan2(dy, dx)) - 180
+
+            # Rotar la imagen para alinear los ojos
+            eyes_center = ((left_eye_center[0] + right_eye_center[0]) // 2,
+                           (left_eye_center[1] + right_eye_center[1]) // 2)
+            M = cv2.getRotationMatrix2D(eyes_center, angle, 1)
+            aligned_face_image = cv2.warpAffine(face_image, M, (face_image.shape[1], face_image.shape[0]))
+
             # Convertir el rostro a escala de grises y redimensionar
-            face_image_gray = cv2.cvtColor(face_image, cv2.COLOR_BGR2GRAY)
+            face_image_gray = cv2.cvtColor(aligned_face_image, cv2.COLOR_BGR2GRAY)
             face_image_resized = cv2.resize(face_image_gray, (100, 100))
 
             # Aplicar preprocesamiento
