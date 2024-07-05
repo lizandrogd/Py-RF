@@ -1,5 +1,3 @@
-from django.http import HttpResponse
-from django.shortcuts import render
 import os
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -8,6 +6,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 import joblib
 import face_recognition
+from django.http import HttpResponse
 
 def entrenamiento(request):
     # Ruta del directorio principal del dataset
@@ -32,7 +31,7 @@ def entrenamiento(request):
                 # Si hay al menos un rostro en la imagen, agregamos la imagen y la etiqueta
                 if len(face_encodings) > 0:
                     images.append(face_encodings[0])  # Tomamos el primer encoding como características
-                    labels.append(foldername)
+                    labels.append(foldername)  # Usamos el nombre de la carpeta como etiqueta
 
     # Convertimos a numpy arrays
     X = np.array(images)
