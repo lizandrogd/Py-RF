@@ -21,13 +21,17 @@ def reconocimiento_facial(request):
             # Load image with face_recognition
             image = face_recognition.load_image_file(image_file)
             
+            # Resize image to 224x224 and convert to RGB
+            resized_image = face_recognition.resize_image(image, (224, 224))
+            rgb_image = resized_image.astype(np.uint8)
+            
             # Detect faces in the image
-            face_locations = face_recognition.face_locations(image)
+            face_locations = face_recognition.face_locations(rgb_image)
             
             # If faces are detected, process the image
             if face_locations:
                 # Extract facial encodings from detected faces
-                face_encodings = face_recognition.face_encodings(image, face_locations)
+                face_encodings = face_recognition.face_encodings(rgb_image, face_locations)
                 
                 # Initialize list to store results
                 results = []
