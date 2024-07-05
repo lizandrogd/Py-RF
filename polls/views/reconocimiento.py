@@ -15,7 +15,7 @@ svm_clf = joblib.load('modelo_svm_con_aumento_con_desconocido.pkl')
 
 @csrf_exempt
 def reconocimiento_facial(request):
-    tolerance_threshold = 0.60  # Umbral de tolerancia
+    tolerance_threshold = 0.10  # Umbral de tolerancia
 
     if request.method == 'POST' and request.FILES.get('image'):
         try:
