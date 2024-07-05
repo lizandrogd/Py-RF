@@ -4,7 +4,7 @@ import joblib
 import face_recognition
 from polls.views.consulta import procesar_resultados
 
-# Cargar los modelos entrenados (KNN y SVM) con información sobre las clases
+# Cargar los modelos entrenados (KNN y SVM)
 knn_clf = joblib.load('modelo_knn_con_aumento_con_desconocido.pkl', allow_pickle=True)
 svm_clf = joblib.load('modelo_svm_con_aumento_con_desconocido.pkl', allow_pickle=True)
 
@@ -33,15 +33,15 @@ def reconocimiento_facial(request):
                 for face_encoding in face_encodings:
                     # Utilizar KNN para predecir la etiqueta
                     knn_prediction = knn_clf.predict([face_encoding])
-                    
+                    print(knn_prediction)
                     # Utilizar SVM para predecir la etiqueta
                     svm_prediction = svm_clf.predict([face_encoding])
-                    
-                    # Agregar la etiqueta predicha solo si ambas predicciones son iguales
+                    print(svm_prediction)
+                    # Verificar si las predicciones de KNN y SVM son iguales
                     if knn_prediction[0] == svm_prediction[0]:
-                        # Obtener la etiqueta correspondiente a la predicción
-                        label = knn_clf.classes_[knn_prediction[0]]
-                        results.append(label)
+
+                        # Agregar la etiqueta predicha solo si ambas predicciones son iguales
+                        results.append(str(knn_prediction[0]))
                     else:
                         # Si las predicciones no son iguales, agregar "Desconocido"
                         results.append("Desconocido")
