@@ -18,7 +18,7 @@ def cargar_imagenes_y_etiquetas(ruta_dataset):
 
         for imagen_nombre in os.listdir(carpeta_persona):
             imagen_ruta = os.path.join(carpeta_persona, imagen_nombre)
-            imagen = face_recognition.load_image_file(imagen_ruta, mode='GRAY')
+            imagen = face_recognition.load_image_file(imagen_ruta)
             caras_codificadas = face_recognition.face_encodings(imagen, num_jitters=1)
 
             if len(caras_codificadas) > 0:
