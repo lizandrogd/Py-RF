@@ -51,11 +51,9 @@ def capturar_rostro(request):
                 top, right, bottom, left = face_location
                 rostro = rgb_image[top:bottom, left:right]
 
-                # Convertir el rostro a RGB (si no lo está ya)
-                rostro_rgb = cv2.cvtColor(rostro, cv2.COLOR_GRAY2RGB)
 
                 # Redimensionar la imagen a un tamaño específico si es necesario
-                rostro_rgb_resized = cv2.resize(rostro_rgb, (224, 224))  # Si se desea redimensionar
+                rostro_rgb_resized = cv2.resize(rostro, (224, 224))  # Si se desea redimensionar
 
                 # Si necesitas normalizar la imagen en el rango de 0 a 255
                 rostro_rgb_resized_normalized = cv2.normalize(rostro_rgb_resized, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
