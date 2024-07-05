@@ -15,7 +15,8 @@ svm_clf = joblib.load('modelo_svm_con_aumento_con_desconocido.pkl')
 
 @csrf_exempt
 def reconocimiento_facial(request):
-    tolerance_threshold = 0.10  # Umbral de tolerancia
+    tolerance_threshold_knn = 0.70  # Umbral de tolerancia
+    tolerance_threshold_svm = 0.60
 
     if request.method == 'POST' and request.FILES.get('image'):
         try:
@@ -74,7 +75,7 @@ def reconocimiento_facial(request):
                         print(knn_confidence)
                         print(svm_confidence)
                         # Marcar como desconocido si la confianza es baja
-                        if knn_confidence < tolerance_threshold or svm_confidence < tolerance_threshold:
+                        if knn_confidence < tolerance_threshold_knn or svm_confidence < tolerance_threshold_svm:
                             results.append("Desconocido")
                         else:
                             # Verificar índice válido
