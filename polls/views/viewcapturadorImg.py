@@ -75,7 +75,7 @@ def capturar_rostro(request):
                 rostro_gray = cv2.cvtColor(rostro_alineado, cv2.COLOR_BGR2GRAY)
 
                 # Redimensionar la imagen a un tamaño específico si es necesario
-                # rostro_gray_resized = cv2.resize(rostro_gray, (100, 100))  # Si se desea redimensionar
+                rostro_gray_resized = cv2.resize(rostro_gray, (100, 100))  # Si se desea redimensionar
 
                 # Generar un código aleatorio de 4 letras
                 codigo_aleatorio = ''.join(random.choices(string.ascii_lowercase, k=4))
@@ -84,7 +84,7 @@ def capturar_rostro(request):
                 nombre_archivo = f"{numero_documento}_{codigo_aleatorio}.png"
                 ruta_guardado = os.path.join(carpeta, nombre_archivo)
                 try:
-                    cv2.imwrite(ruta_guardado, rostro_gray)
+                    cv2.imwrite(ruta_guardado, rostro_gray_resized)
                     print(f"Rostro guardado correctamente: {ruta_guardado}")
                 except cv2.error as e:
                     print(f"Error al guardar el rostro: {e}")
