@@ -48,15 +48,14 @@ def agregar_log(perfil):
     nombre = perfil.get('nombre', '')
     cedula = perfil.get('cedula', '')
     descripcion = 'ha sido reconocido'
-    fecha_actual = datetime.now()
-    hora_actual = fecha_actual.strftime("%H:%M:%S")
-    fecha_actual_str = fecha_actual.strftime("%Y-%m-%d")
+    
+    # Obtener la fecha y hora actual en el formato especificado
+    fecha_actual = datetime.utcnow().isoformat(timespec='milliseconds') + 'Z'
 
     # Construir el registro del log
     registro_log = {
         "detalle": f"{nombre}, {cedula}, {descripcion}",
-        "fecha": fecha_actual_str,
-        "hora": hora_actual
+        "created_at": fecha_actual
     }
 
     # Insertar el registro en la colección de log
