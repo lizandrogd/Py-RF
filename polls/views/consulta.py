@@ -18,23 +18,27 @@ coleccion_log = obtener_coleccion(client, database_name, nombre_coleccion_log)
 def procesar_resultados(resultados):
     perfiles_encontrados = []
 
-    # Obtener la lista de cédulas de los resultados
-    cedulas = resultados
-
-    # Iterar sobre cada cédula en los resultados
-    for cedula in cedulas:
-        # Buscar en la colección perfiles por la cédula
-        print("Buscando perfil para la cédula:", cedula)
-        perfil = coleccion_perfiles.find_one({"cedula": cedula})
-        if perfil:
-            # Convertir el ObjectId a str
-            perfil['_id'] = str(perfil['_id'])
-            perfiles_encontrados.append(perfil)
-            # Agregar registro al log
-            print("Perfil encontrado:", perfil)
-            agregar_log(perfil)
-        else:
-            print("Perfil no encontrado para la cédula:", cedula)
+    # Iterar sobre cada lista de cédulas en los resultados
+    for cedulas in resultados:
+        perfiles_rostro = []
+        for cedula in cedulas:
+            if cedula != "Desconocido":
+                # Buscar en la colección perfiles por la cédula
+                print("Buscando perfil para la cédula:", cedula)
+                perfil = coleccion_perfiles.find_one({"cedula": cedula})
+                if perfil:
+                    # Convertir el ObjectId a str
+                    perfil['_id'] = str(perfil['_id'])
+                    perfiles_rostro.append(perfil)
+                    # Agregar registro al log
+                    print("Perfil encontrado:", perfil)
+                    agregar_log(perfil)
+                else:
+                    print("Perfil no encontrado para la cédula:", cedula)
+            else:
+                perfiles_rostro.append({"cedula": "Desconocido"})
+        
+        perfiles_encontrados.append(perfiles_rostro)
 
     # Aquí puedes realizar cualquier procesamiento adicional de los perfiles encontrados
     return JsonResponse({"resultados": perfiles_encontrados})

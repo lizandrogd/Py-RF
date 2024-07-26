@@ -55,14 +55,10 @@ def reconocimiento_facial(request):
                         
                         # Predecir con KNN
                         knn_prediction = knn_clf.predict_proba([face_encoding])
-                        knn_confidence = np.max(knn_prediction)
-                        knn_name = knn_clf.classes_[np.argmax(knn_prediction)]
                         
                         # Predecir con SVM
                         svm_scores = svm_clf.decision_function([face_encoding])
                         svm_probabilities = np.exp(svm_scores) / np.sum(np.exp(svm_scores), axis=1, keepdims=True)
-                        svm_confidence = np.max(svm_probabilities)
-                        svm_name = svm_clf.classes_[np.argmax(svm_probabilities)]
 
                         # Ruta principal del dataset
                         dataset_path = 'dataset/'
@@ -72,20 +68,26 @@ def reconocimiento_facial(request):
 
                         # Asegurarse de que solo se consideren directorios y se ordenen alfabéticamente
                         carpetas = sorted([carpeta for carpeta in carpetas if os.path.isdir(os.path.join(dataset_path, carpeta))])
-                        print(knn_confidence)
-                        print(svm_confidence)
-                        # Marcar como desconocido si la confianza es baja
-                        if knn_confidence < tolerance_threshold_knn or svm_confidence < tolerance_threshold_svm:
-                            results.append("Desconocido")
+
+                        # Obtener todas las coincidencias que superen el umbral
+                        knn_matches = []
+                        svm_matches = []
+
+                        for i, (knn_conf, svm_conf) in enumerate(zip(knn_prediction[0], svm_probabilities[0])):
+                            if knn_conf >= tolerance_threshold_knn and svm_conf >= tolerance_threshold_svm:
+                                if i < len(carpetas):
+                                    cedula = carpetas[i]
+                                    knn_matches.append((cedula, knn_conf))
+                                    svm_matches.append((cedula, svm_conf))
+
+                        if knn_matches or svm_matches:
+                            # Combinar y ordenar las coincidencias
+                            all_matches = list(set(knn_matches + svm_matches))
+                            all_matches.sort(key=lambda x: x[1], reverse=True)
+                            results.append([match[0] for match in all_matches])
                         else:
-                            # Verificar índice válido
-                            if knn_name < len(carpetas):
-                                cedula = carpetas[knn_name]
-                                results.append(cedula)
-                            else:
-                                results.append("Desconocido")
+                            results.append(["Desconocido"])
                 
-                # Procesar resultados como sea necesario (aquí se usa una función procesar_resultados)
                 print(f"Results: {results}")
                 return procesar_resultados(results)
             
