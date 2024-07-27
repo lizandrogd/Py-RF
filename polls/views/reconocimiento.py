@@ -6,6 +6,7 @@ import face_recognition
 import numpy as np
 from sklearn.svm import SVC
 import os
+from datetime import datetime
 
 from polls.views.consulta import procesar_resultados
 
@@ -87,6 +88,7 @@ def reconocimiento_facial(request):
                             results.extend([match[0] for match in all_matches])
                         else:
                             results.append("Desconocido")
+                            guardar_rostro_desconocido(rostro_rgb_resized_normalized_rgb)
 
                 results = eliminar_duplicados(results)
                 print(f"Results: {results}")
@@ -109,3 +111,18 @@ def eliminar_duplicados(results):
     unique_results.sort()
     
     return unique_results
+
+def guardar_rostro_desconocido(rostro):
+    # Crear la ruta si no existe
+    directorio_desconocidos = '/var/www/facialcheck/public/storage/desconocidos'
+    if not os.path.exists(directorio_desconocidos):
+        os.makedirs(directorio_desconocidos)
+
+    # Generar un nombre único para la imagen
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S%f')
+    nombre_archivo = f'desconocido_{timestamp}.jpg'
+    ruta_archivo = os.path.join(directorio_desconocidos, nombre_archivo)
+
+    # Guardar la imagen
+    cv2.imwrite(ruta_archivo, rostro)
+
