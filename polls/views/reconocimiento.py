@@ -83,10 +83,11 @@ def reconocimiento_facial(request):
                         if knn_matches or svm_matches:
                             # Combinar y ordenar las coincidencias
                             all_matches = list(set(knn_matches + svm_matches))
-                            all_matches.sort(key=lambda x: x[1], reverse=True)
-                            results.append([match[0] for match in all_matches])
+                            all_matches.sort(key=lambda x: max(x[1], x[1]), reverse=True)
+                            results.extend([match[0] for match in all_matches])
                         else:
-                            results.append(["Desconocido"])
+                            results.append("Desconocido")
+
                 results = eliminar_duplicados(results)
                 print(f"Results: {results}")
                 return procesar_resultados(results)
@@ -101,17 +102,10 @@ def reconocimiento_facial(request):
         return HttpResponseBadRequest("Debe proporcionar una imagen en una solicitud POST.")
     
 def eliminar_duplicados(results):
-    # Utilizamos un conjunto para almacenar las tuplas únicas
-    unique_results = set()
-    
-    # Convertimos cada lista en una tupla (porque las listas no son hashables)
-    for result in results:
-            unique_results.add(tuple(result))
-    
-    # Convertimos las tuplas de vuelta a listas
-    final_results = [list(result) for result in unique_results]
+    # Convertimos la lista en un conjunto para eliminar duplicados
+    unique_results = list(set(results))
     
     # Ordenamos la lista final de resultados para mantener un orden consistente
-    final_results.sort()
+    unique_results.sort()
     
-    return final_results
+    return unique_results
