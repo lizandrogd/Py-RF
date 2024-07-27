@@ -41,7 +41,7 @@ def procesar_resultados(resultados):
         perfiles_encontrados.append(perfiles_rostro)
 
     # Aquí puedes realizar cualquier procesamiento adicional de los perfiles encontrados
-    return JsonResponse({"resultados": perfiles_encontrados})
+    return JsonResponse({"resultados": perfiles_encontrados,"consulta":resultados})
 
 def agregar_log(perfil):
     # Obtener detalles del perfil para el log
