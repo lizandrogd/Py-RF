@@ -105,8 +105,7 @@ def eliminar_duplicados(results):
     unique_results = set()
     
     # Convertimos cada lista en una tupla (porque las listas no son hashables)
-    for result1 in results:
-        for result in result1:
+    for result in results:
             unique_results.add(tuple(result))
     
     # Convertimos las tuplas de vuelta a listas
