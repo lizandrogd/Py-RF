@@ -100,16 +100,19 @@ def reconocimiento_facial(request):
     else:
         return HttpResponseBadRequest("Debe proporcionar una imagen en una solicitud POST.")
     
-
 def eliminar_duplicados(results):
     # Utilizamos un conjunto para almacenar las tuplas únicas
     unique_results = set()
     
     # Convertimos cada lista en una tupla (porque las listas no son hashables)
-    for result in results:
-        unique_results.add(tuple(result))
+    for result1 in results:
+        for result in result1:
+            unique_results.add(tuple(result))
     
     # Convertimos las tuplas de vuelta a listas
     final_results = [list(result) for result in unique_results]
+    
+    # Ordenamos la lista final de resultados para mantener un orden consistente
+    final_results.sort()
     
     return final_results
