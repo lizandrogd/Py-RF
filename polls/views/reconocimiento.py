@@ -87,7 +87,7 @@ def reconocimiento_facial(request):
                             results.append([match[0] for match in all_matches])
                         else:
                             results.append(["Desconocido"])
-                
+                results = eliminar_duplicados(results)
                 print(f"Results: {results}")
                 return procesar_resultados(results)
             
@@ -100,4 +100,16 @@ def reconocimiento_facial(request):
     else:
         return HttpResponseBadRequest("Debe proporcionar una imagen en una solicitud POST.")
     
+
+def eliminar_duplicados(results):
+    # Utilizamos un conjunto para almacenar las tuplas únicas
+    unique_results = set()
     
+    # Convertimos cada lista en una tupla (porque las listas no son hashables)
+    for result in results:
+        unique_results.add(tuple(result))
+    
+    # Convertimos las tuplas de vuelta a listas
+    final_results = [list(result) for result in unique_results]
+    
+    return final_results
