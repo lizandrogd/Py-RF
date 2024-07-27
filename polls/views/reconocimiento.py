@@ -104,10 +104,12 @@ def reconocimiento_facial(request):
         return HttpResponseBadRequest("Debe proporcionar una imagen en una solicitud POST.")
     
 def eliminar_duplicados(results):
-        # Crear un conjunto para almacenar las cédulas únicas
-        cedulas_unicas = set()
-        # Iterar sobre los resultados y agregar solo cédulas únicas al conjunto
-        for cedula in results:
-            cedulas_unicas.add(cedula)
-        # Convertir el conjunto de nuevo a una lista
-        return list(cedulas_unicas)
+    # Crear un conjunto para almacenar las cédulas únicas
+    cedulas_unicas = set()
+    # Iterar sobre los resultados y agregar solo cédulas únicas al conjunto
+    for cedula in results:
+        # Convertir cada cédula a una tupla si es una lista, de lo contrario usar tal cual
+        cedula_hashable = tuple(cedula) if isinstance(cedula, list) else cedula
+        cedulas_unicas.add(cedula_hashable)
+    # Convertir el conjunto de nuevo a una lista (de listas si corresponde)
+    return [list(c) if isinstance(c, tuple) else c for c in cedulas_unicas]
