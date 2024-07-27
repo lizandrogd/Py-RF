@@ -16,32 +16,28 @@ coleccion_perfiles = obtener_coleccion(client, database_name, nombre_coleccion)
 coleccion_log = obtener_coleccion(client, database_name, nombre_coleccion_log)
 
 def procesar_resultados(resultados):
-    perfiles_encontrados = []
+    perfiles_rostro = []
 
-    # Iterar sobre cada lista de cédulas en los resultados
-    for cedulas in resultados:
-        perfiles_rostro = []
-        for cedula in cedulas:
-            if cedula != "Desconocido":
-                # Buscar en la colección perfiles por la cédula
-                print("Buscando perfil para la cédula:", cedula)
-                perfil = coleccion_perfiles.find_one({"cedula": cedula})
-                if perfil:
-                    # Convertir el ObjectId a str
-                    perfil['_id'] = str(perfil['_id'])
-                    perfiles_rostro.append(perfil)
-                    # Agregar registro al log
-                    print("Perfil encontrado:", perfil)
-                    agregar_log(perfil)
-                else:
-                    print("Perfil no encontrado para la cédula:", cedula)
+    for cedula in resultados:
+        if cedula != "Desconocido":
+            # Buscar en la colección perfiles por la cédula
+            print("Buscando perfil para la cédula:", cedula)
+            perfil = coleccion_perfiles.find_one({"cedula": cedula})
+            if perfil:
+                # Convertir el ObjectId a str
+                perfil['_id'] = str(perfil['_id'])
+                perfiles_rostro.append(perfil)
+                # Agregar registro al log
+                print("Perfil encontrado:", perfil)
+                agregar_log(perfil)
             else:
-                perfiles_rostro.append({"cedula": "Desconocido"})
-        
-        perfiles_encontrados.append(perfiles_rostro)
+                print("Perfil no encontrado para la cédula:", cedula)
+        else:
+            perfiles_rostro.append({"cedula": "Desconocido"})
 
     # Aquí puedes realizar cualquier procesamiento adicional de los perfiles encontrados
-    return JsonResponse({"resultados": perfiles_encontrados,"consulta":resultados})
+    return JsonResponse({"resultados": perfiles_rostro, "consulta": resultados})
+
 
 def agregar_log(perfil):
     # Obtener detalles del perfil para el log
