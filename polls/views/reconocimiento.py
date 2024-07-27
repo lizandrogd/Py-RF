@@ -9,6 +9,7 @@ import os
 from datetime import datetime
 
 from polls.views.consulta import procesar_resultados
+from polls.views.consulta import guardar_rostro_desconocido
 
 # Load trained models (KNN and SVM)
 knn_clf = joblib.load('modelo_knn_con_aumento_con_desconocido.pkl')
@@ -112,17 +113,4 @@ def eliminar_duplicados(results):
     
     return unique_results
 
-def guardar_rostro_desconocido(rostro):
-    # Crear la ruta si no existe
-    directorio_desconocidos = '/var/www/facialcheck/public/storage/desconocidos'
-    if not os.path.exists(directorio_desconocidos):
-        os.makedirs(directorio_desconocidos)
-
-    # Generar un nombre único para la imagen
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S%f')
-    nombre_archivo = f'desconocido_{timestamp}.jpg'
-    ruta_archivo = os.path.join(directorio_desconocidos, nombre_archivo)
-
-    # Guardar la imagen
-    cv2.imwrite(ruta_archivo, rostro)
 

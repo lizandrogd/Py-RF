@@ -79,11 +79,12 @@ def guardar_rostro_desconocido(rostro):
     # Obtener la fecha y hora actual en el formato especificado
     fecha_actual = datetime.utcnow().isoformat(timespec='milliseconds') + 'Z'
 
-      # Construir el registro del log
+    # Construir el registro del log
     registro_desconocido = {
         "url": f"storage/desconocidos/{nombre_archivo}",
         "created_at": fecha_actual
     }
-      # Insertar el registro en la colección de log
+
+    # Insertar el registro en la colección de desconocido
     coleccion_desconocido.insert_one(registro_desconocido)
     print("Registro de log agregado:", registro_desconocido)
