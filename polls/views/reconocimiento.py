@@ -31,8 +31,8 @@ def reconocimiento_facial(request):
             
             # If faces are detected, process the image
             if face_locations:
-                # Initialize set to store unique results
-                results = set()
+                # Initialize list to store results
+                results = []
 
                 # Process each detected face
                 for face_location in face_locations:
@@ -70,26 +70,29 @@ def reconocimiento_facial(request):
                         carpetas = sorted([carpeta for carpeta in carpetas if os.path.isdir(os.path.join(dataset_path, carpeta))])
 
                         # Obtener todas las coincidencias que superen el umbral
-                        knn_matches = set()
-                        svm_matches = set()
+                        knn_matches = []
+                        svm_matches = []
 
                         for i, (knn_conf, svm_conf) in enumerate(zip(knn_prediction[0], svm_probabilities[0])):
                             if knn_conf >= tolerance_threshold_knn and svm_conf >= tolerance_threshold_svm:
                                 if i < len(carpetas):
                                     cedula = carpetas[i]
-                                    knn_matches.add((cedula, knn_conf))
-                                    svm_matches.add((cedula, svm_conf))
+                                    knn_matches.append((cedula, knn_conf))
+                                    svm_matches.append((cedula, svm_conf))
 
                         if knn_matches or svm_matches:
                             # Combinar y ordenar las coincidencias
-                            all_matches = list(knn_matches | svm_matches)
+                            all_matches = list(set(knn_matches + svm_matches))
                             all_matches.sort(key=lambda x: x[1], reverse=True)
-                            results.update([match[0] for match in all_matches])
+                            results.append([match[0] for match in all_matches])
                         else:
-                            results.add("Desconocido")
+                            results.append(["Desconocido"])
                 
-                print(f"Results: {list(results)}")
-                return procesar_resultados(list(results))
+                # Eliminar duplicados antes de procesar los resultados
+                results_unicos = eliminar_duplicados(results)
+
+                print(f"Results: {results_unicos}")
+                return procesar_resultados(results_unicos)
             
             else:
                 return HttpResponseBadRequest("No se detectaron rostros en la imagen")
@@ -99,3 +102,12 @@ def reconocimiento_facial(request):
     
     else:
         return HttpResponseBadRequest("Debe proporcionar una imagen en una solicitud POST.")
+    
+def eliminar_duplicados(results):
+        # Crear un conjunto para almacenar las cédulas únicas
+        cedulas_unicas = set()
+        # Iterar sobre los resultados y agregar solo cédulas únicas al conjunto
+        for cedula in results:
+            cedulas_unicas.add(cedula)
+        # Convertir el conjunto de nuevo a una lista
+        return list(cedulas_unicas)
