@@ -55,7 +55,8 @@ def agregar_log(perfil):
     # Construir el registro del log
     registro_log = {
         "detalle": f"{nombre}, {cedula}, {descripcion}",
-        "created_at": fecha_actual
+        "created_at": fecha_actual,
+        "cedula": cedula,
     }
 
     # Insertar el registro en la colección de log
