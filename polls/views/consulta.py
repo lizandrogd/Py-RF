@@ -130,5 +130,4 @@ def enviar_correo(destinatario, asunto, mensaje_html):
     except Exception as e:
         print(f"No se pudo enviar el correo. Error: {e}")
 
-# Verificar la condición y enviar el correo
-categoria = '669bc1f40500f8b6f80eabab'  # Cambia esto con la lógica real de obtención de categoría
+
