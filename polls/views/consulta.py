@@ -18,9 +18,9 @@ nombre_coleccion_desconocido = 'desconocido'  # Nombre de la colección de logs
 # Credenciales y configuración del correo
 SMTP_HOST = 'smtp.hostinger.com'
 SMTP_PORT = 465
-SMTP_USERNAME = 'admin@facialcheck.co'
+SMTP_USERNAME = 'app@u-site.app'
 SMTP_PASSWORD = 'Colombia2024*+'
-MAIL_FROM_ADDRESS = 'admin@facialcheck.co'
+MAIL_FROM_ADDRESS = 'app@u-site.app'
 MAIL_FROM_NAME = 'Facial check'
 
 # Conectar a MongoDB y obtener las colecciones
@@ -57,7 +57,7 @@ def agregar_log(perfil):
     # Obtener detalles del perfil para el log
     nombre = perfil.get('nombre', '')
     cedula = perfil.get('cedula', '')
-    categoria = perfil.get('category_id', '')  
+    categoria = perfil.get('categoria_id', '')  
 
     descripcion = 'ha sido reconocido'
 
