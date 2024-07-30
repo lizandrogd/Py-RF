@@ -18,9 +18,9 @@ nombre_coleccion_desconocido = 'desconocido'  # Nombre de la colección de logs
 # Credenciales y configuración del correo
 SMTP_HOST = 'smtp.hostinger.com'
 SMTP_PORT = 465
-SMTP_USERNAME = 'app@u-site.app'
+SMTP_USERNAME = 'admin@facialcheck.co'
 SMTP_PASSWORD = 'Colombia2024*+'
-MAIL_FROM_ADDRESS = 'app@u-site.app'
+MAIL_FROM_ADDRESS = 'admin@facialcheck.co'
 MAIL_FROM_NAME = 'Facial check'
 
 # Conectar a MongoDB y obtener las colecciones
@@ -52,7 +52,6 @@ def procesar_resultados(resultados):
     # Aquí puedes realizar cualquier procesamiento adicional de los perfiles encontrados
     return JsonResponse({"resultados": perfiles_rostro, "consulta": resultados})
 
-
 def agregar_log(perfil):
     # Obtener detalles del perfil para el log
     nombre = perfil.get('nombre', '')
@@ -64,7 +63,7 @@ def agregar_log(perfil):
     if categoria == '669bc1f40500f8b6f80eabab':
         destinatario = 'admin@facialcheck.co'  # Cambia esto con el destinatario real
         asunto = 'Transgresor detectado'
-        mensaje_html = '<p> El usuario  transgresor <b>HTML</b></p>',f"{nombre}, {cedula}, {descripcion}"
+        mensaje_html = f'<p> El usuario transgresor <b>HTML</b></p>{nombre}, {cedula}, {descripcion}'
         enviar_correo(destinatario, asunto, mensaje_html)
     
     # Obtener la fecha y hora actual en el formato especificado
@@ -80,6 +79,27 @@ def agregar_log(perfil):
     # Insertar el registro en la colección de log
     coleccion_log.insert_one(registro_log)
     print("Registro de log agregado:", registro_log)
+
+
+# Definir la función para enviar el correo
+def enviar_correo(destinatario, asunto, mensaje_html):
+    # Crear el objeto del mensaje
+    msg = MIMEMultipart()
+    msg['From'] = MAIL_FROM_ADDRESS
+    msg['To'] = destinatario
+    msg['Subject'] = asunto
+
+    # Adjuntar el cuerpo del mensaje en HTML
+    msg.attach(MIMEText(mensaje_html, 'html'))
+
+    try:
+        # Conectar al servidor SMTP
+        with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT) as server:
+            server.login(SMTP_USERNAME, SMTP_PASSWORD)
+            server.send_message(msg)
+        print('Correo enviado exitosamente')
+    except Exception as e:
+        print(f"No se pudo enviar el correo. Error: {e}")
 
 def guardar_rostro_desconocido(rostro):
 
@@ -108,26 +128,4 @@ def guardar_rostro_desconocido(rostro):
     # Insertar el registro en la colección de desconocido
     coleccion_desconocido.insert_one(registro_desconocido)
     print("Registro de log agregado:", registro_desconocido)
-
-
-# Definir la función para enviar el correo
-def enviar_correo(destinatario, asunto, mensaje_html):
-    # Crear el objeto del mensaje
-    msg = MIMEMultipart()
-    msg['From'] = MAIL_FROM_ADDRESS
-    msg['To'] = destinatario
-    msg['Subject'] = asunto
-
-    # Adjuntar el cuerpo del mensaje en HTML
-    msg.attach(MIMEText(mensaje_html, 'html'))
-
-    try:
-        # Conectar al servidor SMTP
-        with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT) as server:
-            server.login(SMTP_USERNAME, SMTP_PASSWORD)
-            server.send_message(msg)
-        print('Correo enviado exitosamente')
-    except Exception as e:
-        print(f"No se pudo enviar el correo. Error: {e}")
-
 
