@@ -57,7 +57,7 @@ def agregar_log(perfil):
     # Obtener detalles del perfil para el log
     nombre = perfil.get('nombre', '')
     cedula = perfil.get('cedula', '')
-    categoria = perfil.get('categoria_id', '')  
+    categoria = perfil.get('category_id', '')  
 
     descripcion = 'ha sido reconocido'
 
