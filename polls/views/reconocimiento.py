@@ -76,7 +76,7 @@ def reconocimiento_facial(request):
                         svm_matches = []
 
                         for i, (knn_conf, svm_conf) in enumerate(zip(knn_prediction[0], svm_probabilities[0])):
-                            print(f"Rostro {i+1}: KNN - {knn_conf}, SVM - {svm_conf}")
+                            print(f"Rostro {i+1}: KNN - {knn_conf*100:.2f}%, SVM - {svm_conf*100:.2f}%")
                             if knn_conf >= tolerance_threshold_knn and svm_conf >= tolerance_threshold_svm:
                                 if i < len(carpetas):
                                     cedula = carpetas[i]
