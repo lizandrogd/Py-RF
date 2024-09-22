@@ -16,23 +16,25 @@ def entrenamiento(request):
     images = []
     labels = []
 
-    # Recorremos cada carpeta dentro del directorio principal
-    for foldername in os.listdir(dataset_path):
+    # Recorremos cada carpeta dentro del directorio principal en orden alfabético
+    for foldername in sorted(os.listdir(dataset_path)):
         folder_path = os.path.join(dataset_path, foldername)
         if os.path.isdir(folder_path):
-            # Recorremos cada archivo de imagen dentro de la carpeta
-            for filename in os.listdir(folder_path):
-                image_path = os.path.join(folder_path, filename)
-                image = face_recognition.load_image_file(image_path)
-                
-                # Extraemos el encoding facial (descriptores)
-                face_encodings = face_recognition.face_encodings(image)
-                
-                # Si hay al menos un rostro en la imagen, agregamos la imagen y la etiqueta
-                if len(face_encodings) > 0:
-                    images.append(face_encodings[0])  # Tomamos el primer encoding como características
-                    labels.append(foldername)  # Usamos el nombre de la carpeta como etiqueta
-                    print("Etiqueta", labels)
+            # Recorremos cada archivo de imagen dentro de la carpeta en orden alfabético
+            for filename in sorted(os.listdir(folder_path)):
+                if filename.endswith(('.jpg', '.jpeg', '.png')):  # Filtramos solo archivos de imagen
+                    image_path = os.path.join(folder_path, filename)
+                    try:
+                        image = face_recognition.load_image_file(image_path)
+                        face_encodings = face_recognition.face_encodings(image)
+                        
+                        # Si hay al menos un rostro en la imagen, agregamos la imagen y la etiqueta
+                        if len(face_encodings) > 0:
+                            images.append(face_encodings[0])  # Tomamos el primer encoding como características
+                            labels.append(foldername)  # Usamos el nombre de la carpeta como etiqueta
+                    except Exception as e:
+                        print(f"Error al procesar la imagen {image_path}: {e}")
+
     # Convertimos a numpy arrays
     X = np.array(images)
     y = np.array(labels)
