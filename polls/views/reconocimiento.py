@@ -77,11 +77,16 @@ def reconocimiento_facial(request):
 
                         for i, (knn_conf, svm_conf) in enumerate(zip(knn_prediction[0], svm_probabilities[0])):
                             print(f"Rostro {i+1}: KNN - {knn_conf*100:.2f}%, SVM - {svm_conf*100:.2f}%")
+                            
+                            # Imprimir los márgenes de reconocimiento
                             if knn_conf >= tolerance_threshold_knn and svm_conf >= tolerance_threshold_svm:
                                 if i < len(carpetas):
                                     cedula = carpetas[i]
                                     knn_matches.append((cedula, knn_conf))
                                     svm_matches.append((cedula, svm_conf))
+                                    
+                                    # Imprimir información de coincidencia
+                                    print(f"Coincidencia encontrada: {cedula} con KNN: {knn_conf*100:.2f}%, SVM: {svm_conf*100:.2f}%")
 
                         if knn_matches or svm_matches:
                             # Combinar y ordenar las coincidencias
@@ -104,6 +109,7 @@ def reconocimiento_facial(request):
     
     else:
         return HttpResponseBadRequest("Debe proporcionar una imagen en una solicitud POST.")
+
     
 def eliminar_duplicados(results):
     # Convertimos la lista en un conjunto para eliminar duplicados
