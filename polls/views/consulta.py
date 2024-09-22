@@ -1,6 +1,6 @@
 from django.http import JsonResponse
 from bson import ObjectId
-from datetime import datetime
+from datetime import datetime, timezone
 from polls.mongo_connection import conectar_mongodb, obtener_coleccion
 import os
 import cv2
@@ -66,13 +66,19 @@ def agregar_log(perfil):
         mensaje_html = f'<p> El usuario transgresor <b>HTML</b></p>{nombre}, {cedula}, {descripcion}'
         enviar_correo(destinatario, asunto, mensaje_html)
     
-    # Obtener la fecha y hora actual en el formato especificado
-    fecha_actual = datetime.utcnow().isoformat(timespec='milliseconds') + 'Z'
+    
+        # Obtener la fecha y hora actual en UTC
+        fecha_act = datetime.now(timezone.utc)
+
+        # Formatear la fecha
+        fecha_actual = fecha_act.isoformat(timespec='milliseconds').replace('Z', '+00:00')
+
 
     # Construir el registro del log
     registro_log = {
         "detalle": f"{nombre}, {cedula}, {descripcion}",
         "created_at": fecha_actual,
+        "updated_at": fecha_actual,
         "cedula": cedula,
     }
 
