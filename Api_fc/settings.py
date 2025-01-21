@@ -41,7 +41,7 @@ INSTALLED_APPS = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    'https://facialcheck.co',  # Reemplaza esto con el origen de tu aplicación frontend
+    'https://kyc.u-s.app',  # Reemplaza esto con el origen de tu aplicación frontend
 ]
 
 MIDDLEWARE = [
