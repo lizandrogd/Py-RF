@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-98jek_a%5sq^dws8ze!)l6bbs8f%!wblwde)h3$z5h7lo9bpqa
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'ia.facialcheck.co', 'a.facialcheck.co', '/run/socket_ia_fc.sock','api.facialcheck.co']
+ALLOWED_HOSTS = ['https://kyc.u-s.app', '127.0.0.1']
 
 
 # Application definition
