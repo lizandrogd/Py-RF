@@ -8,6 +8,7 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import api_view, permission_classes
 import face_recognition
+from polls.views.consulta import reiniciar_gunicorn
 
 # Esta vista estará protegida por JWT, se usa el decorador `@permission_classes`
 @csrf_exempt
@@ -80,6 +81,7 @@ def capturar_rostro(request):
 
     if numero_documento and images:
         guardar_rostro(numero_documento, images)
+        reiniciar_gunicorn()
         return HttpResponse("Captura de rostros realizada correctamente.")
     else:
         return HttpResponse("Por favor, proporcione tanto el parámetro numero_documento como al menos una imagen en la solicitud POST.")

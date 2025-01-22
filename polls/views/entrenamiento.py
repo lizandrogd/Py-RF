@@ -11,6 +11,7 @@ from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import api_view, permission_classes
+from polls.views.consulta import reiniciar_gunicorn
 
 
 @csrf_exempt
@@ -84,5 +85,6 @@ def entrenamiento(request):
         f"Número de perfiles entrenados: {len(set(labels))}<br>"
         f"Distribución de clases: {class_distribution}"
     )
+    reiniciar_gunicorn()
 
     return HttpResponse(response)
