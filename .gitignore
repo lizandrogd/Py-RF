@@ -1,0 +1,71 @@
+# Python
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.so
+
+# Entornos virtuales
+venv/
+env/
+.venv/
+*.env
+
+# Archivos de configuración de entorno
+.env
+*.env
+
+# Django
+*.log
+*.pot
+*.py[cod]
+db.sqlite3
+db.sqlite3-journal
+*.log
+
+# Archivos de migraciones
+migrations/
+
+# Archivos de bases de datos
+*.db
+*.sqlite3
+
+# Archivos de test
+test_*.py
+
+# Archivos generados por IDEs
+.vscode/
+.idea/
+*.iml
+
+# Archivos de Gunicorn
+gunicorn.pid
+*.sock
+
+# Archivos de contenedores Docker
+.docker/
+docker-compose.override.yml
+
+# Archivos temporales del sistema
+*.bak
+*.swp
+*.swo
+
+# Archivos de configuración de paquetes
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Archivos de log
+*.log
+
+# Archivos de caché de python
+__pycache__/
+*.py[cod]
+
+# Archivos de backup
+*~
+
+# Ignorar el directorio del dataset
+dataset/
