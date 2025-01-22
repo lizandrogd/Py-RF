@@ -4,14 +4,16 @@ import cv2
 import random
 import string
 from django.http import HttpResponse
-from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import api_view, permission_classes
 import face_recognition
 
+# Esta vista estará protegida por JWT, se usa el decorador `@permission_classes`
 @csrf_exempt
-@require_http_methods(["POST"])
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])  # Aplica la protección de JWT
 def capturar_rostro(request):
-
 
     def guardar_rostro(numero_documento, images):
         # Carpeta para almacenar los rostros
@@ -51,13 +53,11 @@ def capturar_rostro(request):
                 top, right, bottom, left = face_location
                 rostro = rgb_image[top:bottom, left:right]
 
-
                 # Redimensionar la imagen a un tamaño específico si es necesario
                 rostro_rgb_resized = cv2.resize(rostro, (224, 224))  # Si se desea redimensionar
 
                 # Si necesitas normalizar la imagen en el rango de 0 a 255
                 rostro_rgb_resized_normalized = cv2.normalize(rostro_rgb_resized, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
-
 
                 # Generar un código aleatorio de 4 letras
                 codigo_aleatorio = ''.join(random.choices(string.ascii_lowercase, k=4))
@@ -72,7 +72,7 @@ def capturar_rostro(request):
                     print(f"Error al guardar el rostro: {e}")
 
     # Obtener el número de documento y las imágenes de la solicitud POST
-    numero_documento = request.POST.get("numero_documento", "")
+    numero_documento = request.data.get("numero_documento", "")
     images = request.FILES.getlist("images", [])
 
     print("Número de documento:", numero_documento)

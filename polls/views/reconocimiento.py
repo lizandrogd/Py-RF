@@ -5,34 +5,38 @@ import cv2
 import face_recognition
 import numpy as np
 import os
-
+from datetime import datetime  # Importa datetime
+from polls.models import Log  # Importar el modelo Log
 from polls.views.consulta import procesar_resultados
-from polls.views.consulta import guardar_rostro_desconocido
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import api_view, permission_classes
 
-# Load trained models (SVM only)
+# Cargar el modelo SVM previamente entrenado
 svm_clf = joblib.load('modelo_svm_con_aumento_con_desconocido.pkl')
 
 @csrf_exempt
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])  # Aplica la protección de JWT
 def reconocimiento_facial(request):
     tolerance_threshold_svm = 0.60  # Umbral de tolerancia para SVM
 
     if request.method == 'POST' and request.FILES.get('image'):
         try:
-            # Get image from request
+            # Obtener la imagen de la solicitud
             image_file = request.FILES['image']
             
-            # Load image with face_recognition
+            # Cargar la imagen con face_recognition
             image = face_recognition.load_image_file(image_file)
             
-            # Detect faces in the image
+            # Detectar rostros en la imagen
             face_locations = face_recognition.face_locations(image)
             
-            # If faces are detected, process the image
+            # Si se detectan rostros, procesar la imagen
             if face_locations:
-                # Initialize list to store results
+                # Inicializar lista para almacenar los resultados
                 results = []
 
-                # Process each detected face
+                # Procesar cada rostro detectado
                 for face_location in face_locations:
                     top, right, bottom, left = face_location
                     rostro = image[top:bottom, left:right]
@@ -53,7 +57,12 @@ def reconocimiento_facial(request):
                         
                         # Predecir con SVM
                         svm_scores = svm_clf.decision_function([face_encoding])
-                        svm_probabilities = np.exp(svm_scores) / np.sum(np.exp(svm_scores), axis=1, keepdims=True)
+                        
+                        # Manejo seguro de dimensiones para cálculo de probabilidades
+                        if len(svm_scores.shape) == 1:  # Modelo binario
+                            svm_probabilities = np.array([np.exp(svm_scores) / np.sum(np.exp(svm_scores), keepdims=True)]).flatten()
+                        else:  # Modelo multiclase
+                            svm_probabilities = np.exp(svm_scores) / np.sum(np.exp(svm_scores), axis=1, keepdims=True)
 
                         # Ruta principal del dataset
                         dataset_path = 'dataset/'
@@ -67,17 +76,12 @@ def reconocimiento_facial(request):
                         # Obtener coincidencias que superen el umbral
                         svm_matches = []
 
-                        for i, svm_conf in enumerate(svm_probabilities[0]):
-                            print(f"Rostro {i + 1}: SVM - {svm_conf * 100:.2f}%")
-                            
+                        for i, svm_conf in enumerate(svm_probabilities):
                             # Imprimir los márgenes de reconocimiento
                             if svm_conf >= tolerance_threshold_svm:
                                 if i < len(carpetas):
                                     cedula = carpetas[i]
                                     svm_matches.append((cedula, svm_conf))
-                                    
-                                    # Imprimir información de coincidencia
-                                    print(f"Coincidencia encontrada: {cedula} con SVM: {svm_conf * 100:.2f}%")
 
                         if svm_matches:
                             # Ordenar las coincidencias
@@ -85,10 +89,16 @@ def reconocimiento_facial(request):
                             results.extend([match[0] for match in svm_matches])
                         else:
                             results.append("Desconocido")
-                            guardar_rostro_desconocido(rostro_rgb_resized_normalized_rgb)
 
                 results = eliminar_duplicados(results)
-                print(f"Results: {results}")
+
+                # Guardar logs en la base de datos
+                for result in results:
+                    if result == "Desconocido":
+                        Log.objects.create(level="Error", message="Rostro desconocido", created_at=datetime.now())
+                    else:
+                        Log.objects.create(level="Éxito", message=f"Rostro reconocido: {result}", created_at=datetime.now())
+                
                 return procesar_resultados(results)
             
             else:
@@ -108,4 +118,3 @@ def eliminar_duplicados(results):
     unique_results.sort()
     
     return unique_results
-
