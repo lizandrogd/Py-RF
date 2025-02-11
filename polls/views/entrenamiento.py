@@ -53,6 +53,9 @@ def entrenamiento(request):
     y_encoded = label_encoder.fit_transform(y)
 
     class_counts = Counter(y_encoded)
+    print("Clases únicas en y_encoded:", set(y_encoded))
+    print("Distribución de clases antes de train_test_split:", class_counts)
+
     if any(count < 2 for count in class_counts.values()):
         return JsonResponse({"error": True, "message": "Cada clase debe tener al menos dos imágenes para el entrenamiento."})
 
@@ -62,6 +65,13 @@ def entrenamiento(request):
     X_train, X_test, y_train, y_test = train_test_split(
         X, y_encoded, test_size=test_size, random_state=42, stratify=y_encoded
     )
+
+    print("Clases únicas en y_train después de train_test_split:", set(y_train))
+    print("Distribución en y_train:", Counter(y_train))
+    print("Distribución en y_test:", Counter(y_test))
+
+    if len(set(y_train)) < 2:
+        return JsonResponse({"error": True, "message": "El conjunto de entrenamiento debe tener al menos dos clases."})
 
     knn_classifier = KNeighborsClassifier(n_neighbors=3)
     knn_classifier.fit(X_train, y_train)
