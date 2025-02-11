@@ -9,7 +9,7 @@ __pycache__/
 venv/
 env/
 .venv/
-*.env
+#*.env
 
 # Archivos de configuración de entorno
 .env
