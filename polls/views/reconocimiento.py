@@ -25,6 +25,7 @@ def reconocimiento_facial(request):
             # Obtener la imagen de la solicitud
             image_file = request.FILES['image']
             usuario = request.user
+            documento = request.documento
 
             # Cargar la imagen con face_recognition
             image = face_recognition.load_image_file(image_file)
@@ -91,13 +92,19 @@ def reconocimiento_facial(request):
             # Eliminar duplicados y ordenar resultados
             results = sorted(set(results))
 
+
             # Guardar logs en la base de datos
             for result in results:
                 log_message = f"Rostro reconocido: {result}" if result != "Desconocido" else "Rostro desconocido"
                 log_level = "Éxito" if result != "Desconocido" else "Error"
                 Log.objects.create(level=log_level, message=log_message, created_at=datetime.now())
 
-            return JsonResponse({"error": False, "results": results})
+                if result == documento:
+                    rta = "reconocido"
+                else:
+                    rta = "no reconocido"
+
+            return JsonResponse({"error": False, "results": rta})
 
         except Exception as e:
             return JsonResponse({"error": True, "message": f"Error al procesar la imagen: {e}"})
