@@ -1,3 +1,4 @@
+nano Api_fc/settings.py
 from pathlib import Path
 import os
 from dotenv import load_dotenv
@@ -93,9 +94,8 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.AllowAny',
     ),
-<<<<<<< HEAD
+
 }
-=======
     'DEFAULT_THROTTLE_CLASSES': [
         'rest_framework.throttling.AnonRateThrottle',
         'rest_framework.throttling.UserRateThrottle',
@@ -145,4 +145,4 @@ LOGGING = {
         },
     },
 }
->>>>>>> aaf2fec673a1d892d3649815aee8028e9078dc5b
+
