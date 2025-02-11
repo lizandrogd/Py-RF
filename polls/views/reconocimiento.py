@@ -25,7 +25,7 @@ def reconocimiento_facial(request):
             # Obtener la imagen de la solicitud
             image_file = request.FILES['image']
             usuario = request.user
-            documento = request.documento
+            documento = request.POST.get('documento')
 
             # Cargar la imagen con face_recognition
             image = face_recognition.load_image_file(image_file)
