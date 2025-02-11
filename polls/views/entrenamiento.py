@@ -1,24 +1,27 @@
 import os
 import numpy as np
+from collections import Counter
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import api_view, permission_classes
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 import joblib
 import face_recognition
-from collections import Counter
-from django.http import HttpResponse
-from django.views.decorators.csrf import csrf_exempt
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.decorators import api_view, permission_classes
 from polls.views.consulta import reiniciar_gunicorn
-
 
 @csrf_exempt
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])  # Aplica la protección de JWT
 def entrenamiento(request):
-    dataset_path = 'dataset/'
+    usuario = request.user
+    dataset_path = os.path.join('dataset', str(usuario))  # Corrige la ruta del dataset
+
+    if not os.path.exists(dataset_path):
+        return JsonResponse({"error": True, "message": "No se encontró el dataset del usuario."})
 
     images = []
     labels = []
@@ -40,8 +43,8 @@ def entrenamiento(request):
                     except Exception as e:
                         print(f"Error al procesar la imagen {image_path}: {e}")
 
-    if len(images) == 0 or len(labels) == 0:
-        return HttpResponse("No se han cargado imágenes o etiquetas para el entrenamiento.")
+    if not images or not labels:
+        return JsonResponse({"error": True, "message": "No se han cargado imágenes o etiquetas para el entrenamiento."})
 
     X = np.array(images)
     y = np.array(labels)
@@ -51,7 +54,7 @@ def entrenamiento(request):
 
     class_counts = Counter(y_encoded)
     if any(count < 2 for count in class_counts.values()):
-        return HttpResponse("Cada clase debe tener al menos dos imágenes para el entrenamiento.")
+        return JsonResponse({"error": True, "message": "Cada clase debe tener al menos dos imágenes para el entrenamiento."})
 
     min_test_size = len(set(y_encoded))
     test_size = max(0.2, min_test_size / len(y_encoded))
@@ -75,16 +78,16 @@ def entrenamiento(request):
     knn_accuracy = knn_classifier.score(X_test, y_test)
     svm_accuracy = svm_classifier.score(X_test, y_test)
 
-    class_distribution = ", ".join([f"{label}: {count}" for label, count in Counter(labels).items()])
+    class_distribution = {label: count for label, count in Counter(labels).items()}
 
-    response = (
-        f"Entrenamiento completado.<br>"
-        f"KNN Accuracy: {knn_accuracy:.2f}<br>"
-        f"SVM Accuracy: {svm_accuracy:.2f}<br>"
-        f"Número de imágenes entrenadas: {len(images)}<br>"
-        f"Número de perfiles entrenados: {len(set(labels))}<br>"
-        f"Distribución de clases: {class_distribution}"
-    )
     reiniciar_gunicorn()
 
-    return HttpResponse(response)
+    return JsonResponse({
+        "error": False,
+        "message": "Entrenamiento completado.",
+        "knn_accuracy": round(knn_accuracy, 2),
+        "svm_accuracy": round(svm_accuracy, 2),
+        "num_images": len(images),
+        "num_profiles": len(set(labels)),
+        "class_distribution": class_distribution
+    })
