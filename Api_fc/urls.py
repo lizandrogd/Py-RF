@@ -2,6 +2,8 @@ from django.urls import path
 from polls.views.viewcapturadorImg import capturar_rostro
 from polls.views.entrenamiento import entrenamiento
 from polls.views.reconocimiento import reconocimiento_facial
+from polls.views.eliminarusuario import eliminar_usuario
+
 from polls.views import main
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
 
@@ -15,7 +17,8 @@ urlpatterns = [
     # Endpoints protegidos con JWT
     path('api/v1/capturar_rostro/', capturar_rostro, name="capturar_rostro"),
     path('api/v1/entrenamiento/', entrenamiento, name="entrenamiento"),
-    path('api/v1/eliminar_usuario/',  eliminar_usuario, name="eliminar_usuario"),
+    path('api/v1/reconocimiento_facial/',  reconocimiento_facial, name="reconocimiento_facial"),
+    path('api/v1/eliminar_usuario/', eliminar_usuario, name="eliminar_usuario"),
 
 
     # Endpoints para obtener y refrescar el token JWT
