@@ -8,12 +8,12 @@ __pycache__/
 # Entornos virtuales
 venv/
 env/
-.venv/
+#.venv/
 #*.env
 
 # Archivos de configuración de entorno
-.env
-*.env
+#.env
+#*.env
 
 # Django
 *.log
