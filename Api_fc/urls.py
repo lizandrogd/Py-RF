@@ -15,7 +15,8 @@ urlpatterns = [
     # Endpoints protegidos con JWT
     path('api/v1/capturar_rostro/', capturar_rostro, name="capturar_rostro"),
     path('api/v1/entrenamiento/', entrenamiento, name="entrenamiento"),
-    path('api/v1/reconocimiento_facial/',  reconocimiento_facial, name="reconocimiento_facial"),
+    path('api/v1/eliminar_usuario/',  eliminar_usuario, name="eliminar_usuario"),
+
 
     # Endpoints para obtener y refrescar el token JWT
     path('api/v1/login/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
