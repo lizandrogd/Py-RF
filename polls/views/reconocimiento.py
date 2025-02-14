@@ -1,88 +1,72 @@
+import os
+import datetime
+import numpy as np
+import cv2
+import random
+import string
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-import joblib
-import cv2
-import face_recognition
-import numpy as np
-import os
-from datetime import datetime
-from polls.models import Log
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import api_view, permission_classes
-
-# Cargar el modelo SVM previamente entrenado
-svm_clf = joblib.load('modelo_svm_con_aumento_con_desconocido.pkl')
+import joblib
+import face_recognition
 
 @csrf_exempt
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])  # Aplica la protección de JWT
-def reconocimiento_facial(request):
-    tolerance_threshold_svm = 0.50  # Umbral de tolerancia para SVM
+@permission_classes([IsAuthenticated])
+def verificar_identidad(request):
+    usuario = request.user
+    imagen = request.FILES.get('image')
+    documento = request.POST.get('documento')
 
-    if request.method == 'POST' and request.FILES.get('image'):
-        try:
-            # Obtener la imagen y el usuario
-            image_file = request.FILES['image']
-            usuario = request.user
-            documento = request.POST.get('documento')
+    if not imagen:
+        return JsonResponse({"error": True, "message": "No se proporcionó una imagen."})
 
-            # Cargar la imagen
-            image = face_recognition.load_image_file(image_file)
+    modelo_path = os.path.join('modelos_svm', str(usuario), f'{documento}.pkl')
 
-            # Detectar rostros
-            face_locations = face_recognition.face_locations(image)
-            if not face_locations:
-                return JsonResponse({"error": True, "message": "No se detectaron rostros en la imagen."})
-        
-            dataset_path = os.path.join('dataset', str(usuario))
-            if not os.path.exists(dataset_path):
-                return JsonResponse({"error": True, "message": "No se encontró el dataset del usuario."})
+    if not os.path.exists(modelo_path):
+        return JsonResponse({"error": True, "message": "No hay un modelo entrenado para este usuario."})
 
-            carpetas = sorted([carpeta for carpeta in os.listdir(dataset_path) if os.path.isdir(os.path.join(dataset_path, carpeta))])
+    try:
+        # Procesar la imagen
+        nparr = np.frombuffer(imagen.read(), np.uint8)
+        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+
+        if img is None:
+            return JsonResponse({"error": True, "message": "Error al procesar la imagen."})
+
+        rgb_image = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        face_locations = face_recognition.face_locations(rgb_image)
+        face_encodings = face_recognition.face_encodings(rgb_image, face_locations)
+
+        if not face_encodings:
+            return JsonResponse({"error": True, "message": "No se detectó ningún rostro en la imagen."})
+
+        # Cargar modelo y hacer predicción
+        modelo_svm = joblib.load(modelo_path)
+        prediccion = modelo_svm.predict([face_encodings[0]])
+
+        resultado = "Reconocido" if prediccion[0] == documento else "No reconocido"
+
+        if resultado == "Reconocido":
+            # Guardar la imagen en el dataset del usuario
+            dataset_usuario = os.path.join('dataset', str(usuario), documento)
+            os.makedirs(dataset_usuario, exist_ok=True)
 
             for face_location in face_locations:
                 top, right, bottom, left = face_location
-                rostro = image[top:bottom, left:right]
-
-                # Redimensionar y convertir a RGB
+                rostro = rgb_image[top:bottom, left:right]
                 rostro_resized = cv2.resize(rostro, (224, 224))
-                rostro_rgb = cv2.cvtColor(rostro_resized, cv2.COLOR_BGR2RGB)
+                rostro_normalized = cv2.normalize(rostro_resized, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
 
-                # Extraer características faciales
-                face_encodings = face_recognition.face_encodings(rostro_rgb)
-                if not face_encodings:
-                    continue
+                # Nombre de archivo con código aleatorio
+                codigo_aleatorio = ''.join(random.choices(string.ascii_lowercase, k=4))
+                nombre_archivo = f"{documento}_{codigo_aleatorio}.png"
+                ruta_guardado = os.path.join(dataset_usuario, nombre_archivo)
 
-                face_encoding = face_encodings[0]
+                cv2.imwrite(ruta_guardado, rostro_normalized)
 
-                # Predecir con SVM
-                svm_scores = svm_clf.decision_function([face_encoding])
-                svm_probabilities = np.array([svm_scores]).flatten() if len(svm_scores.shape) == 1 else svm_scores.flatten()
+        return JsonResponse({"error": False, "message": resultado})
 
-                # Verificar coincidencias
-                for i, svm_conf in enumerate(svm_probabilities):
-                    if svm_conf >= tolerance_threshold_svm and i < len(carpetas):
-                        resultado = carpetas[i]
-
-                        # Guardar en el dataset si es reconocido
-                        if resultado == documento:
-                            log_message = f"Rostro reconocido: {resultado}"
-                            log_level = "Éxito"
-                            Log.objects.create(level=log_level, message=log_message, created_at=datetime.now())
-
-                            # Guardar la imagen en el dataset
-                            user_folder = os.path.join(dataset_path, resultado)
-                            os.makedirs(user_folder, exist_ok=True)
-                            timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-                            cv2.imwrite(os.path.join(user_folder, f"{timestamp}.jpg"), rostro_resized)
-
-                            return JsonResponse({"error": False, "results": "reconocido"})
-
-                # Si no hay coincidencia, registrar como desconocido
-                Log.objects.create(level="Error", message="Rostro desconocido", created_at=datetime.now())
-                return JsonResponse({"error": False, "results": "no reconocido"})
-
-        except Exception as e:
-            return JsonResponse({"error": True, "message": f"Error al procesar la imagen: {e}"})
-
-    return JsonResponse({"error": True, "message": "Debe proporcionar una imagen en una solicitud POST."})
+    except Exception as e:
+        return JsonResponse({"error": True, "message": f"Error en la verificación: {e}"})
