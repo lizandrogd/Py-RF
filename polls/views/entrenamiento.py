@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 def entrenamiento(request):
     usuario = request.user
     documento = request.POST.get('documento')
-    dataset_path = os.path.join('dataset', str(usuario), documento)  
+    dataset_path = os.path.join('dataset', str(usuario), str(documento))  
 
     if not os.path.exists(dataset_path):
         return JsonResponse({"error": True, "message": "No se encontró el dataset del usuario."})
@@ -83,7 +83,9 @@ def entrenamiento(request):
     svm_classifier = SVC(kernel='linear', C=1.0, gamma='scale')
     svm_classifier.fit(X_train, y_train)
 
-    svm_model_filename = os.path.join('modelos_svm', str(usuario), f'{documento}.pkl')
+    svm_model_filename = os.path.join('modelos_svm', str(usuario), str(documento), 'svm.pkl')
+
+
 
     os.makedirs(os.path.dirname(svm_model_filename), exist_ok=True)
     joblib.dump(svm_classifier, svm_model_filename)
