@@ -14,7 +14,7 @@ import face_recognition
 @csrf_exempt
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def verificar_identidad(request):
+def reconocimiento_facial(request):
     usuario = request.user
     imagen = request.FILES.get('image')
     documento = request.POST.get('documento')
