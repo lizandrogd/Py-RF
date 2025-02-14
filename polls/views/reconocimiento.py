@@ -1,9 +1,7 @@
 import os
-import datetime
 import numpy as np
 import cv2
-import random
-import string
+import datetime
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.permissions import IsAuthenticated
@@ -14,7 +12,7 @@ import face_recognition
 @csrf_exempt
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def reconocimiento_facial(request):
+def reconocimiento_kyc(request):
     usuario = request.user
     imagen = request.FILES.get('image')
     documento = request.POST.get('documento')
@@ -22,10 +20,10 @@ def reconocimiento_facial(request):
     if not imagen:
         return JsonResponse({"error": True, "message": "No se proporcionó una imagen."})
 
-    modelo_path = os.path.join('modelos_svm', str(usuario), f'{documento}.pkl')
+    modelo_path = os.path.join('modelos_kyc', str(usuario), f"{documento}.pkl")
 
     if not os.path.exists(modelo_path):
-        return JsonResponse({"error": True, "message": "No hay un modelo entrenado para este usuario."})
+        return JsonResponse({"error": True, "message": "No hay un perfil KYC registrado para este usuario."})
 
     try:
         # Procesar la imagen
@@ -36,37 +34,39 @@ def reconocimiento_facial(request):
             return JsonResponse({"error": True, "message": "Error al procesar la imagen."})
 
         rgb_image = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        face_locations = face_recognition.face_locations(rgb_image)
-        face_encodings = face_recognition.face_encodings(rgb_image, face_locations)
+        face_encodings = face_recognition.face_encodings(rgb_image)
 
         if not face_encodings:
             return JsonResponse({"error": True, "message": "No se detectó ningún rostro en la imagen."})
 
-        # Cargar modelo y hacer predicción
-        modelo_svm = joblib.load(modelo_path)
-        prediccion = modelo_svm.predict([face_encodings[0]])
+        # Cargar el embedding guardado del usuario
+        embedding_registrado = joblib.load(modelo_path)
 
-        resultado = "Reconocido" if prediccion[0] == documento else "No reconocido"
+        # Comparar con la imagen ingresada
+        distancia = np.linalg.norm(embedding_registrado - face_encodings[0])
 
-        if resultado == "Reconocido":
-            # Guardar la imagen en el dataset del usuario
-            dataset_usuario = os.path.join('dataset', str(usuario), documento)
-            os.makedirs(dataset_usuario, exist_ok=True)
+        # Umbral de similitud
+        UMBRAL_SIMILITUD = 0.6  
+        es_reconocido = distancia < UMBRAL_SIMILITUD
 
-            for face_location in face_locations:
-                top, right, bottom, left = face_location
-                rostro = rgb_image[top:bottom, left:right]
-                rostro_resized = cv2.resize(rostro, (224, 224))
-                rostro_normalized = cv2.normalize(rostro_resized, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
+        # Guardar la imagen si es reconocida
+        if es_reconocido:
+            ruta_guardado = os.path.join('registros_kyc', str(usuario), str(documento))
+            os.makedirs(ruta_guardado, exist_ok=True)
 
-                # Nombre de archivo con código aleatorio
-                codigo_aleatorio = ''.join(random.choices(string.ascii_lowercase, k=4))
-                nombre_archivo = f"{documento}_{codigo_aleatorio}.png"
-                ruta_guardado = os.path.join(dataset_usuario, nombre_archivo)
+            # Generar un nombre de archivo con la fecha y hora actual
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            ruta_imagen = os.path.join(ruta_guardado, f"{timestamp}.jpg")
 
-                cv2.imwrite(ruta_guardado, rostro_normalized)
+            cv2.imwrite(ruta_imagen, img)  # Guardar la imagen
 
-        return JsonResponse({"error": False, "message": resultado})
+            return JsonResponse({
+                "error": False,
+                "message": "Reconocido",
+                "imagen_guardada": ruta_imagen
+            })
+
+        return JsonResponse({"error": False, "message": "No reconocido"})
 
     except Exception as e:
         return JsonResponse({"error": True, "message": f"Error en la verificación: {e}"})
