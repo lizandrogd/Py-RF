@@ -15,7 +15,7 @@ def eliminar_usuario(request):
     if not documento:
         return JsonResponse({"error": True, "mensaje": "Debe proporcionar el número de documento."})
     
-    carpeta = os.path.join('dataset', str(usuario), documento)
+    carpeta = os.path.join('registros_kyc', str(usuario), documento)
     
     if os.path.exists(carpeta):
         try:
