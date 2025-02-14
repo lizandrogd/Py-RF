@@ -1,4 +1,4 @@
-from django.http import JsonResponse, HttpResponseBadRequest
+from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import joblib
 import cv2
@@ -7,7 +7,6 @@ import numpy as np
 import os
 from datetime import datetime
 from polls.models import Log
-from polls.views.consulta import procesar_resultados
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import api_view, permission_classes
 
@@ -22,38 +21,35 @@ def reconocimiento_facial(request):
 
     if request.method == 'POST' and request.FILES.get('image'):
         try:
-            # Obtener la imagen de la solicitud
+            # Obtener la imagen y el usuario
             image_file = request.FILES['image']
             usuario = request.user
             documento = request.POST.get('documento')
 
-            # Cargar la imagen con face_recognition
+            # Cargar la imagen
             image = face_recognition.load_image_file(image_file)
 
-            # Detectar rostros en la imagen
+            # Detectar rostros
             face_locations = face_recognition.face_locations(image)
-
             if not face_locations:
                 return JsonResponse({"error": True, "message": "No se detectaron rostros en la imagen."})
+        
+            dataset_path = os.path.join('dataset', str(usuario))
+            if not os.path.exists(dataset_path):
+                return JsonResponse({"error": True, "message": "No se encontró el dataset del usuario."})
 
-            results = []
+            carpetas = sorted([carpeta for carpeta in os.listdir(dataset_path) if os.path.isdir(os.path.join(dataset_path, carpeta))])
 
             for face_location in face_locations:
                 top, right, bottom, left = face_location
                 rostro = image[top:bottom, left:right]
 
-                # Redimensionar y normalizar la imagen
-                rostro_rgb_resized = cv2.resize(rostro, (224, 224))
-                rostro_rgb_resized_normalized = cv2.normalize(
-                    rostro_rgb_resized, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U
-                )
-                rostro_rgb_resized_normalized_rgb = cv2.cvtColor(
-                    rostro_rgb_resized_normalized, cv2.COLOR_BGR2RGB
-                )
+                # Redimensionar y convertir a RGB
+                rostro_resized = cv2.resize(rostro, (224, 224))
+                rostro_rgb = cv2.cvtColor(rostro_resized, cv2.COLOR_BGR2RGB)
 
-                # Extraer codificaciones faciales
-                face_encodings = face_recognition.face_encodings(rostro_rgb_resized_normalized_rgb)
-
+                # Extraer características faciales
+                face_encodings = face_recognition.face_encodings(rostro_rgb)
                 if not face_encodings:
                     continue
 
@@ -61,50 +57,30 @@ def reconocimiento_facial(request):
 
                 # Predecir con SVM
                 svm_scores = svm_clf.decision_function([face_encoding])
+                svm_probabilities = np.array([svm_scores]).flatten() if len(svm_scores.shape) == 1 else svm_scores.flatten()
 
-                # Normalizar las puntuaciones si es necesario
-                if len(svm_scores.shape) == 1:  # Modelo binario
-                    svm_probabilities = np.array([svm_scores]).flatten()
-                else:  # Modelo multiclase
-                    svm_probabilities = svm_scores.flatten()
+                # Verificar coincidencias
+                for i, svm_conf in enumerate(svm_probabilities):
+                    if svm_conf >= tolerance_threshold_svm and i < len(carpetas):
+                        resultado = carpetas[i]
 
-                # Construir ruta del dataset del usuario
-                dataset_path = os.path.join('dataset', str(usuario))
+                        # Guardar en el dataset si es reconocido
+                        if resultado == documento:
+                            log_message = f"Rostro reconocido: {resultado}"
+                            log_level = "Éxito"
+                            Log.objects.create(level=log_level, message=log_message, created_at=datetime.now())
 
-                if not os.path.exists(dataset_path):
-                    return JsonResponse({"error": True, "message": "No se encontró el dataset del usuario."})
+                            # Guardar la imagen en el dataset
+                            user_folder = os.path.join(dataset_path, resultado)
+                            os.makedirs(user_folder, exist_ok=True)
+                            timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+                            cv2.imwrite(os.path.join(user_folder, f"{timestamp}.jpg"), rostro_resized)
 
-                # Obtener una lista de las carpetas en el directorio del dataset
-                carpetas = sorted([carpeta for carpeta in os.listdir(dataset_path)
-                                   if os.path.isdir(os.path.join(dataset_path, carpeta))])
+                            return JsonResponse({"error": False, "results": "reconocido"})
 
-                # Obtener coincidencias que superen el umbral
-                svm_matches = [(carpetas[i], svm_conf) for i, svm_conf in enumerate(svm_probabilities)
-                               if svm_conf >= tolerance_threshold_svm and i < len(carpetas)]
-
-                if svm_matches:
-                    # Ordenar las coincidencias por confianza
-                    svm_matches.sort(key=lambda x: x[1], reverse=True)
-                    results.extend([match[0] for match in svm_matches])
-                else:
-                    results.append("Desconocido")
-
-            # Eliminar duplicados y ordenar resultados
-            results = sorted(set(results))
-
-
-            # Guardar logs en la base de datos
-            for result in results:
-                log_message = f"Rostro reconocido: {result}" if result != "Desconocido" else "Rostro desconocido"
-                log_level = "Éxito" if result != "Desconocido" else "Error"
-                Log.objects.create(level=log_level, message=log_message, created_at=datetime.now())
-
-                if result == documento:
-                    rta = "reconocido"
-                else:
-                    rta = "no reconocido"
-
-            return JsonResponse({"error": False, "results": rta})
+                # Si no hay coincidencia, registrar como desconocido
+                Log.objects.create(level="Error", message="Rostro desconocido", created_at=datetime.now())
+                return JsonResponse({"error": False, "results": "no reconocido"})
 
         except Exception as e:
             return JsonResponse({"error": True, "message": f"Error al procesar la imagen: {e}"})
