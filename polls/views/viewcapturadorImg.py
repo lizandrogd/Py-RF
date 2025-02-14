@@ -14,16 +14,17 @@ from polls.views.consulta import reiniciar_gunicorn
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def capturar_rostro(request):
-    def es_imagen_duplicada(nuevo_rostro, carpeta):
+    def es_imagen_duplicada(nuevo_encoding, carpeta):
         """ Verifica si la imagen ya existe en la carpeta comparando embeddings. """
         for archivo in os.listdir(carpeta):
             if archivo.endswith(".png"):
                 imagen_existente = face_recognition.load_image_file(os.path.join(carpeta, archivo))
                 encoding_existente = face_recognition.face_encodings(imagen_existente)
 
+                # Solo comparar si hay un encoding válido
                 if encoding_existente:
-                    distancia = face_recognition.face_distance(encoding_existente, [nuevo_rostro])
-                    if distancia[0] < 0.5:  # Umbral de similitud ajustable
+                    distancia = face_recognition.face_distance(encoding_existente, [nuevo_encoding])
+                    if distancia[0] < 0.6:  # Ajustamos el umbral a 0.6 para mayor flexibilidad
                         return True
         return False
 
@@ -54,8 +55,11 @@ def capturar_rostro(request):
                     rostro_resized = cv2.resize(rostro, (224, 224))
                     rostro_normalized = cv2.normalize(rostro_resized, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
 
+                    # Obtener encoding
                     encoding_nuevo = face_recognition.face_encodings(rostro_resized)
-                    if encoding_nuevo and not es_imagen_duplicada(encoding_nuevo[0], carpeta):
+                    
+                    # Solo guardar si el encoding es válido y no es una imagen duplicada
+                    if encoding_nuevo and len(encoding_nuevo) > 0 and not es_imagen_duplicada(encoding_nuevo[0], carpeta):
                         codigo_aleatorio = ''.join(random.choices(string.ascii_lowercase, k=4))
                         nombre_archivo = f"{numero_documento}_{codigo_aleatorio}.png"
                         ruta_guardado = os.path.join(carpeta, nombre_archivo)
