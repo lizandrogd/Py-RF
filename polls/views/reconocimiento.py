@@ -17,7 +17,7 @@ svm_clf = joblib.load('modelo_svm_con_aumento_con_desconocido.pkl')
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])  # Aplica la protección de JWT
 def reconocimiento_facial(request):
-    tolerance_threshold_svm = 0.60  # Umbral de tolerancia para SVM
+    tolerance_threshold_svm = 0.50  # Umbral de tolerancia para SVM
 
     if request.method == 'POST' and request.FILES.get('image'):
         try:
