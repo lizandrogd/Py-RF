@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 @csrf_exempt
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])  
-def entrenamiento_kyc(request):
+def entrenamiento(request):
     usuario = request.user
     documento = request.POST.get('documento')
 
